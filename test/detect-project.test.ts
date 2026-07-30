@@ -39,6 +39,7 @@ void afterEach(async () => {
 void test('detects Expo before React Native when both dependencies are present', async () => {
   const root = await createProject({
     name: 'expo-app',
+    packageManager: 'yarn@4.9.2',
     dependencies: {
       expo: '^55.0.0',
       'react-native': '0.83.0',
@@ -50,6 +51,13 @@ void test('detects Expo before React Native when both dependencies are present',
   assert.equal(result.kind, 'expo');
   assert.equal(result.name, 'expo-app');
   assert.deepEqual(result.evidence, ['dependency:expo@^55.0.0', 'dependency:react-native@0.83.0']);
+  assert.deepEqual(result.packageManager, {
+    name: 'yarn',
+    version: '4.9.2',
+    source: 'packageManager',
+    evidence: ['packageManager:yarn@4.9.2'],
+    conflictingManagers: [],
+  });
 });
 
 void test('detects a bare React Native project', async () => {

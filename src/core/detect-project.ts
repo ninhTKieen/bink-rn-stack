@@ -1,22 +1,14 @@
 import { access, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 
-export type ProjectKind = 'expo' | 'react-native' | 'unknown';
-
-export interface ProjectDetection {
-  root: string;
-  name: string;
-  kind: ProjectKind;
-  evidence: string[];
-  packageJsonPath: string;
-}
-
-export type ProjectDetectionErrorCode =
-  | 'DIRECTORY_NOT_FOUND'
-  | 'NOT_A_DIRECTORY'
-  | 'PACKAGE_JSON_NOT_FOUND'
-  | 'INVALID_PACKAGE_JSON'
-  | 'UNSUPPORTED_PROJECT';
+import { detectPackageManager } from '@/core/detect-package-manager.js';
+import type {
+  DependencyMap,
+  ProjectDetection,
+  ProjectDetectionErrorCode,
+  ProjectKind,
+  ProjectPackageJson,
+} from '@/core/detect-project.types.js';
 
 export class ProjectDetectionError extends Error {
   readonly code: ProjectDetectionErrorCode;
@@ -27,15 +19,6 @@ export class ProjectDetectionError extends Error {
     this.code = code;
   }
 }
-
-interface PackageJson {
-  name?: unknown;
-  dependencies?: unknown;
-  devDependencies?: unknown;
-  peerDependencies?: unknown;
-}
-
-type DependencyMap = Record<string, string>;
 
 const EXPO_CONFIG_FILES = [
   'app.config.js',
@@ -62,7 +45,7 @@ function dependencyMap(value: unknown): DependencyMap {
   );
 }
 
-function collectDependencies(packageJson: PackageJson): DependencyMap {
+function collectDependencies(packageJson: ProjectPackageJson): DependencyMap {
   return {
     ...dependencyMap(packageJson.peerDependencies),
     ...dependencyMap(packageJson.devDependencies),
@@ -104,7 +87,7 @@ async function findExpoConfig(root: string): Promise<string | undefined> {
   return undefined;
 }
 
-async function readPackageJson(packageJsonPath: string): Promise<PackageJson> {
+async function readPackageJson(packageJsonPath: string): Promise<ProjectPackageJson> {
   let contents: string;
 
   try {
@@ -157,6 +140,7 @@ export async function detectProject(targetPath = '.'): Promise<ProjectDetection>
 
   const packageJsonPath = path.join(root, 'package.json');
   const packageJson = await readPackageJson(packageJsonPath);
+  const packageManager = await detectPackageManager(root, packageJson.packageManager);
   const dependencies = collectDependencies(packageJson);
   const evidence: string[] = [];
 
@@ -192,5 +176,6 @@ export async function detectProject(targetPath = '.'): Promise<ProjectDetection>
     kind,
     evidence,
     packageJsonPath,
+    packageManager,
   };
 }

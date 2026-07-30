@@ -25,6 +25,8 @@ yarn dev init /path/to/your-app --json
 
 Detection gives Expo precedence because Expo projects normally declare both `expo` and `react-native`. It also recognizes the `expo` object in `app.json` and conventional `app.config.*` files.
 
+The same command detects npm, Yarn, pnpm, or Bun from the `packageManager` field or the app's lockfile. If different package-manager lockfiles conflict, the result is reported as ambiguous instead of selecting one silently.
+
 ## Development checks
 
 ```bash
