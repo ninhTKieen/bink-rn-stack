@@ -10,6 +10,14 @@ export type {
   ProjectDetectionErrorCode,
   ProjectKind,
 } from '@/core/detect-project.types.js';
+export { buildSetupPreview } from '@/core/setup-preview.js';
+export type {
+  PreviewDependency,
+  PreviewDependencyStatus,
+  PreviewFile,
+  PreviewFileStatus,
+  SetupPreview,
+} from '@/core/setup-preview.types.js';
 export { STACK_MODULE_NAMES, STACK_MODULES } from '@/modules/stack-module.js';
 export type {
   ModuleSelectionMode,

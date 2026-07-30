@@ -1,25 +1,13 @@
 import type { Command } from 'commander';
 
 import type { InitOptions } from '@/cli/commands/init.types.js';
+import { formatSetupPreview } from '@/cli/output/format-setup-preview.js';
 import { parseModuleOption, promptForModules } from '@/cli/prompts/select-modules.js';
-import type { PackageManagerDetection } from '@/core/detect-package-manager.types.js';
 import { detectProject, ProjectDetectionError } from '@/core/detect-project.js';
-import { moduleLabels } from '@/modules/stack-module.js';
+import { buildSetupPreview } from '@/core/setup-preview.js';
 
 function projectLabel(kind: 'expo' | 'react-native'): string {
   return kind === 'expo' ? 'Expo' : 'bare React Native';
-}
-
-function packageManagerLabel(name: PackageManagerDetection['name']): string {
-  const labels = {
-    npm: 'npm',
-    yarn: 'Yarn',
-    pnpm: 'pnpm',
-    bun: 'Bun',
-    unknown: 'not detected',
-  } as const;
-
-  return labels[name];
 }
 
 export function registerInitCommand(program: Command): void {
@@ -27,6 +15,7 @@ export function registerInitCommand(program: Command): void {
     .command('init')
     .description('Inspect a React Native app before setting up the stack')
     .argument('[path]', 'path to the React Native app', '.')
+    .option('--dry-run', 'show the setup preview without making changes')
     .option('--json', 'print the detection result as JSON')
     .option(
       '-m, --modules <modules>',
@@ -50,32 +39,18 @@ export function registerInitCommand(program: Command): void {
         );
       }
 
-      process.stdout.write(`Detected ${projectLabel(result.kind)} project\n`);
-      process.stdout.write(`Name: ${result.name}\n`);
-      process.stdout.write(`Root: ${result.root}\n`);
-      process.stdout.write(`Evidence: ${result.evidence.join(', ')}\n`);
-      process.stdout.write(
-        `Package manager: ${packageManagerLabel(result.packageManager.name)}${
-          result.packageManager.version === undefined ? '' : ` ${result.packageManager.version}`
-        }\n`,
-      );
-      if (result.packageManager.evidence.length > 0) {
-        process.stdout.write(
-          `Package manager evidence: ${result.packageManager.evidence.join(', ')}\n`,
-        );
-      }
-      if (result.packageManager.conflictingManagers.length > 0) {
-        process.stdout.write(
-          `Warning: conflicting package manager signals found for ${result.packageManager.conflictingManagers.join(', ')}.\n`,
-        );
-      }
+      process.stdout.write(`Detected ${projectLabel(result.kind)} project: ${result.name}\n`);
       const selectedModules =
         options.modules === undefined
           ? await promptForModules()
           : parseModuleOption(options.modules);
-      process.stdout.write(`Selected modules: ${moduleLabels(selectedModules).join(', ')}\n`);
+      const preview = await buildSetupPreview(result, selectedModules);
+
+      process.stdout.write(`${formatSetupPreview(preview)}\n`);
       process.stdout.write(
-        '\nProject detection passed. Dependency installation will be added next.\n',
+        options.dryRun === true
+          ? '\nDry run complete. No changes were made.\n'
+          : '\nPreview complete. Dependency installation will be added next; no changes were made.\n',
       );
     });
 }

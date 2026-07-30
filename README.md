@@ -24,6 +24,14 @@ yarn dev init /path/to/your-app --modules all
 yarn dev init /path/to/your-app --modules axios,zustand,tanstack-query
 ```
 
+Preview the complete plan without making changes:
+
+```bash
+yarn dev init /path/to/your-app --modules all --dry-run
+```
+
+The preview reports dependencies to install or skip, generated-file paths and conflicts, the package-manager command, app integration work, and native rebuild steps.
+
 Machine-readable output is available with `--json`:
 
 ```bash
