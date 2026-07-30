@@ -17,6 +17,13 @@ For local development:
 yarn dev init /path/to/your-app
 ```
 
+The interactive flow offers either the complete stack or a checkbox list for Axios, Unistyles, Zustand, TanStack Query, and i18n. For non-interactive use, pass all modules or a comma-separated selection:
+
+```bash
+yarn dev init /path/to/your-app --modules all
+yarn dev init /path/to/your-app --modules axios,zustand,tanstack-query
+```
+
 Machine-readable output is available with `--json`:
 
 ```bash

@@ -1,11 +1,10 @@
 import type { Command } from 'commander';
 
+import type { InitOptions } from '@/cli/commands/init.types.js';
+import { parseModuleOption, promptForModules } from '@/cli/prompts/select-modules.js';
 import type { PackageManagerDetection } from '@/core/detect-package-manager.types.js';
 import { detectProject, ProjectDetectionError } from '@/core/detect-project.js';
-
-interface InitOptions {
-  json?: boolean;
-}
+import { moduleLabels } from '@/modules/stack-module.js';
 
 function projectLabel(kind: 'expo' | 'react-native'): string {
   return kind === 'expo' ? 'Expo' : 'bare React Native';
@@ -29,6 +28,10 @@ export function registerInitCommand(program: Command): void {
     .description('Inspect a React Native app before setting up the stack')
     .argument('[path]', 'path to the React Native app', '.')
     .option('--json', 'print the detection result as JSON')
+    .option(
+      '-m, --modules <modules>',
+      'select all or a comma-separated list: axios, unistyles, zustand, tanstack-query, i18n',
+    )
     .action(async (targetPath: string, options: InitOptions) => {
       const result = await detectProject(targetPath);
 
@@ -66,6 +69,11 @@ export function registerInitCommand(program: Command): void {
           `Warning: conflicting package manager signals found for ${result.packageManager.conflictingManagers.join(', ')}.\n`,
         );
       }
+      const selectedModules =
+        options.modules === undefined
+          ? await promptForModules()
+          : parseModuleOption(options.modules);
+      process.stdout.write(`Selected modules: ${moduleLabels(selectedModules).join(', ')}\n`);
       process.stdout.write(
         '\nProject detection passed. Dependency installation will be added next.\n',
       );
