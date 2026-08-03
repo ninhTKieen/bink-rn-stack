@@ -14,7 +14,7 @@ void test('formats generated files as a sorted directory tree', () => {
   assert.deepEqual(output, [
     'src/',
     '├── api/',
-    '│   ├── client.ts (already exists)',
+    '│   ├── client.ts (already exists with different content)',
     '│   └── index.ts',
     '└── providers/',
     '    ├── AppProviders.tsx',

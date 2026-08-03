@@ -28,9 +28,14 @@ function renderChildren(node: FileTreeNode, prefix: string, lines: string[]): vo
     const isLast = index === children.length - 1;
     const connector = isLast ? '└── ' : '├── ';
     const isDirectory = child.children.size > 0;
-    const conflictLabel = child.status === 'conflict' ? ' (already exists)' : '';
+    const statusLabel =
+      child.status === 'conflict'
+        ? ' (already exists with different content)'
+        : child.status === 'unchanged'
+          ? ' (unchanged)'
+          : '';
 
-    lines.push(`${prefix}${connector}${child.name}${isDirectory ? '/' : conflictLabel}`);
+    lines.push(`${prefix}${connector}${child.name}${isDirectory ? '/' : statusLabel}`);
 
     if (isDirectory) {
       renderChildren(child, `${prefix}${isLast ? '    ' : '│   '}`, lines);
@@ -69,8 +74,13 @@ export function formatFileTree(files: readonly PreviewFile[]): string[] {
 
     if (topLevelNode !== undefined) {
       const isDirectory = topLevelNode.children.size > 0;
-      const conflictLabel = topLevelNode.status === 'conflict' ? ' (already exists)' : '';
-      lines.push(`${topLevelNode.name}${isDirectory ? '/' : conflictLabel}`);
+      const statusLabel =
+        topLevelNode.status === 'conflict'
+          ? ' (already exists with different content)'
+          : topLevelNode.status === 'unchanged'
+            ? ' (unchanged)'
+            : '';
+      lines.push(`${topLevelNode.name}${isDirectory ? '/' : statusLabel}`);
 
       if (isDirectory) {
         renderChildren(topLevelNode, '', lines);

@@ -12,7 +12,7 @@ function applyThemePreference(preference: ThemePreference): void {
   }
 
   UnistylesRuntime.setAdaptiveThemes(false);
-  UnistylesRuntime.setTheme(preference);
+  UnistylesRuntime.setTheme(preference as never);
 }
 
 export const useThemeStore = create<ThemeState>((set) => ({

@@ -4,7 +4,7 @@ An opinionated setup CLI for React Native and Expo applications.
 
 ## Current milestone
 
-The CLI can inspect an application directory and distinguish an Expo app from a bare React Native app. Package installation and source generation will be added in subsequent milestones.
+The CLI detects Expo and bare React Native projects, detects their package manager, previews the setup, installs missing dependencies, and writes the selected foundations after confirmation.
 
 ```bash
 yarn build
@@ -30,7 +30,16 @@ Preview the complete plan without making changes:
 yarn dev init /path/to/your-app --modules all --dry-run
 ```
 
-The preview reports dependencies to install or skip, generated-file paths and conflicts, the package-manager command, app integration work, and native rebuild steps.
+Skip the confirmation prompt in scripts or CI:
+
+```bash
+yarn dev init /path/to/your-app --modules all --yes
+```
+
+Existing files with different content block setup. Review the preview first, then use
+`--force` only when you intentionally want the generated version to replace them.
+
+The preview reports dependencies to install or skip, generated-file paths, unchanged files and conflicts, the package-manager command, app integration work, and native rebuild steps. Shared outputs such as MMKV storage are deduplicated, and provider/store barrel files are composed from the selected modules.
 
 Machine-readable output is available with `--json`:
 

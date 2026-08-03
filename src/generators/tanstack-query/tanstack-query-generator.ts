@@ -19,7 +19,6 @@ export function createTanstackQueryFileRecipes(
     'tanstack-query/query-index.ts.template',
     'tanstack-query/QueryProvider.tsx.template',
     'tanstack-query/QueryProvider.types.ts.template',
-    'tanstack-query/providers-index.ts.template',
   ] as const;
 
   return TANSTACK_QUERY_RELATIVE_FILES.map((relativePath, index) => {

@@ -2,9 +2,13 @@ import type { Command } from 'commander';
 
 import type { InitOptions } from '@/cli/commands/init.types.js';
 import { formatSetupPreview } from '@/cli/output/format-setup-preview.js';
+import { promptToApplySetup } from '@/cli/prompts/confirm-setup.js';
 import { parseModuleOption, promptForModules } from '@/cli/prompts/select-modules.js';
+import { CLI_VERSION } from '@/configs/constants.js';
 import { detectProject, ProjectDetectionError } from '@/core/detect-project.js';
-import { buildSetupPreview } from '@/core/setup-preview.js';
+import { FoundationWriteConflictError } from '@/core/foundation-writer.js';
+import { executeSetupPlan } from '@/core/setup-executor.js';
+import { buildSetupPlan } from '@/core/setup-preview.js';
 
 function projectLabel(kind: 'expo' | 'react-native'): string {
   return kind === 'expo' ? 'Expo' : 'bare React Native';
@@ -16,6 +20,8 @@ export function registerInitCommand(program: Command): void {
     .description('Inspect a React Native app before setting up the stack')
     .argument('[path]', 'path to the React Native app', '.')
     .option('--dry-run', 'show the setup preview without making changes')
+    .option('-y, --yes', 'apply without asking for confirmation')
+    .option('--force', 'overwrite generated files that differ from the preview')
     .option('--json', 'print the detection result as JSON')
     .option(
       '-m, --modules <modules>',
@@ -44,13 +50,42 @@ export function registerInitCommand(program: Command): void {
         options.modules === undefined
           ? await promptForModules()
           : parseModuleOption(options.modules);
-      const preview = await buildSetupPreview(result, selectedModules);
+      const plan = await buildSetupPlan(result, selectedModules);
 
-      process.stdout.write(`${formatSetupPreview(preview)}\n`);
+      process.stdout.write(`${formatSetupPreview(plan.preview)}\n`);
+
+      if (options.dryRun === true) {
+        process.stdout.write('\nDry run complete. No changes were made.\n');
+        return;
+      }
+
+      const conflicts = plan.preview.files
+        .filter(({ status }) => status === 'conflict')
+        .map(({ path }) => path);
+
+      if (conflicts.length > 0 && options.force !== true) {
+        throw new FoundationWriteConflictError(conflicts);
+      }
+
+      const shouldApply = options.yes === true ? true : await promptToApplySetup();
+
+      if (!shouldApply) {
+        process.stdout.write('\nSetup cancelled. No changes were made.\n');
+        return;
+      }
+
+      process.stdout.write('\nApplying setup...\n');
+      const execution = await executeSetupPlan(plan, CLI_VERSION, {
+        force: options.force === true,
+      });
+
+      process.stdout.write('\nSetup complete.\n');
       process.stdout.write(
-        options.dryRun === true
-          ? '\nDry run complete. No changes were made.\n'
-          : '\nPreview complete. Dependency installation will be added next; no changes were made.\n',
+        `Dependencies installed: ${execution.installedDependencies.length}\n` +
+          `Files created: ${execution.files.created.length}\n` +
+          `Files unchanged: ${execution.files.unchanged.length}\n` +
+          `Files overwritten: ${execution.files.overwritten.length}\n` +
+          'Manifest: .bink-rn-stack.json\n',
       );
     });
 }

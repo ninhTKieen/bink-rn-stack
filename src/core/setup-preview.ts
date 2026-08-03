@@ -1,14 +1,16 @@
-import { access, readFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
-import type { PackageManagerName } from '@/core/detect-package-manager.types.js';
+import { createPackageInstallCommand } from '@/core/package-manager-command.js';
 import type {
   PreviewDependency,
   PreviewEntrySources,
   PreviewFile,
   PreviewPackageJson,
+  SetupPlan,
   SetupPreview,
 } from '@/core/setup-preview.types.js';
+import { renderSelectedFoundations } from '@/generators/foundation-renderer.js';
 import { STACK_MODULES } from '@/modules/stack-module.js';
 import type { StackModuleDefinition, StackModuleName } from '@/modules/stack-module.types.js';
 import type { ProjectDetection } from '@/core/detect-project.types.js';
@@ -32,12 +34,19 @@ async function readInstalledDependencies(packageJsonPath: string): Promise<Set<s
   ]);
 }
 
-async function exists(filePath: string): Promise<boolean> {
+async function detectFileStatus(
+  filePath: string,
+  generatedContent: string,
+): Promise<PreviewFile['status']> {
   try {
-    await access(filePath);
-    return true;
-  } catch {
-    return false;
+    const existingContent = await readFile(filePath, 'utf8');
+    return existingContent === generatedContent ? 'unchanged' : 'conflict';
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      return 'create';
+    }
+
+    return 'conflict';
   }
 }
 
@@ -76,40 +85,21 @@ function dependenciesForProject(
   return [...definition.dependencies, ...(definition.reactNativeDependencies ?? [])];
 }
 
-function buildInstallCommand(
-  packageManager: PackageManagerName,
-  dependencies: readonly string[],
-): string {
-  const commands = {
-    npm: 'npm install',
-    yarn: 'yarn add',
-    pnpm: 'pnpm add',
-    bun: 'bun add',
-  } as const;
-
-  return `${commands[packageManager]} ${dependencies.join(' ')}`;
-}
-
 function uniqueValues(values: readonly string[]): string[] {
   return [...new Set(values)];
 }
 
-export async function buildSetupPreview(
+export async function buildSetupPlan(
   project: ProjectDetection,
   selectedModules: readonly StackModuleName[],
-): Promise<SetupPreview> {
+): Promise<SetupPlan> {
   const definitions = selectedDefinitions(selectedModules);
   const installedDependencies = await readInstalledDependencies(project.packageJsonPath);
   const dependencySources = new Map<string, PreviewEntrySources>();
-  const fileSources = new Map<string, PreviewEntrySources>();
 
   for (const definition of definitions) {
     for (const dependency of dependenciesForProject(definition, project.kind)) {
       addEntrySource(dependencySources, dependency, definition.name);
-    }
-
-    for (const file of definition.files) {
-      addEntrySource(fileSources, file, definition.name);
     }
   }
 
@@ -120,10 +110,18 @@ export async function buildSetupPreview(
       requestedBy,
     }),
   );
+  if (project.kind === 'unknown') {
+    throw new Error('Cannot build a setup preview for an unsupported project.');
+  }
+
+  const foundation = await renderSelectedFoundations({
+    projectKind: project.kind,
+    selectedModules,
+  });
   const files: PreviewFile[] = await Promise.all(
-    [...fileSources.values()].map(async ({ name, requestedBy }) => ({
-      path: name,
-      status: (await exists(path.join(project.root, name))) ? 'conflict' : 'create',
+    foundation.files.map(async ({ path: filePath, content, requestedBy }) => ({
+      path: filePath,
+      status: await detectFileStatus(path.join(project.root, filePath), content),
       requestedBy,
     })),
   );
@@ -143,7 +141,7 @@ export async function buildSetupPreview(
   }
 
   if (files.some(({ status }) => status === 'conflict')) {
-    warnings.push('Existing files are conflicts and will not be overwritten without confirmation.');
+    warnings.push('Existing files are conflicts and will not be overwritten without --force.');
   }
 
   const requiresNativeRebuild = definitions.some(
@@ -155,18 +153,27 @@ export async function buildSetupPreview(
       : ['Run CocoaPods on iOS and rebuild the native application.']
     : [];
 
-  return {
+  const installCommand =
+    project.packageManager.name === 'unknown'
+      ? undefined
+      : createPackageInstallCommand(project.packageManager.name, missingDependencies);
+  const preview: SetupPreview = {
     project,
-    selectedModules: [...selectedModules],
+    selectedModules: foundation.selectedModules,
     dependencies,
     files,
-    ...(project.packageManager.name === 'unknown' || missingDependencies.length === 0
-      ? {}
-      : {
-          installCommand: buildInstallCommand(project.packageManager.name, missingDependencies),
-        }),
+    ...(installCommand === undefined ? {} : { installCommand: installCommand.display }),
     integrationSteps: uniqueValues(definitions.flatMap(({ integrationSteps }) => integrationSteps)),
     nativeSteps,
     warnings,
   };
+
+  return { preview, foundation };
+}
+
+export async function buildSetupPreview(
+  project: ProjectDetection,
+  selectedModules: readonly StackModuleName[],
+): Promise<SetupPreview> {
+  return (await buildSetupPlan(project, selectedModules)).preview;
 }

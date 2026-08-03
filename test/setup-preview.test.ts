@@ -7,6 +7,7 @@ import { afterEach, test } from 'node:test';
 import { formatSetupPreview } from '@/cli/output/format-setup-preview.js';
 import { detectProject } from '@/core/detect-project.js';
 import { buildSetupPreview } from '@/core/setup-preview.js';
+import { renderAxiosFoundation } from '@/generators/axios/axios-generator.js';
 
 const temporaryDirectories: string[] = [];
 
@@ -69,7 +70,7 @@ void test('previews missing dependencies, installed dependencies, and file confl
   const output = formatSetupPreview(preview);
   assert.match(output, /Setup preview/);
   assert.match(output, /= axios \(already installed\)/);
-  assert.match(output, /├── client\.ts \(already exists\)/);
+  assert.match(output, /├── client\.ts \(already exists with different content\)/);
 });
 
 void test('uses the bare React Native localization dependency and npm command', async () => {
@@ -90,4 +91,31 @@ void test('uses the bare React Native localization dependency and npm command', 
   assert.deepEqual(preview.nativeSteps, [
     'Run CocoaPods on iOS and rebuild the native application.',
   ]);
+});
+
+void test('recognizes generated files whose contents are already up to date', async () => {
+  const root = await createApp({
+    name: 'unchanged-preview',
+    dependencies: {
+      'react-native': '0.83.0',
+    },
+  });
+  await writeFile(path.join(root, 'package-lock.json'), '{}');
+  await mkdir(path.join(root, 'src/api'), { recursive: true });
+  const renderedFiles = await renderAxiosFoundation();
+  const generatedConfig = renderedFiles.find(
+    ({ path: filePath }) => filePath === 'src/api/config.ts',
+  );
+  assert.ok(generatedConfig !== undefined);
+  await writeFile(path.join(root, generatedConfig.path), generatedConfig.content);
+  const project = await detectProject(root);
+
+  const preview = await buildSetupPreview(project, ['axios']);
+  const configPreview = preview.files.find(
+    ({ path: filePath }) => filePath === 'src/api/config.ts',
+  );
+
+  assert.equal(configPreview?.status, 'unchanged');
+  assert.ok(!preview.warnings.some((warning) => warning.includes('will not be overwritten')));
+  assert.match(formatSetupPreview(preview), /config\.ts \(unchanged\)/);
 });

@@ -7,7 +7,6 @@ export interface StackModuleDefinition {
   dependencies: readonly string[];
   expoDependencies?: readonly string[];
   reactNativeDependencies?: readonly string[];
-  files: readonly string[];
   integrationSteps: readonly string[];
   requiresNativeRebuild?: boolean;
 }

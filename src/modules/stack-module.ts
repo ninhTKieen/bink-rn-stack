@@ -1,8 +1,4 @@
 import type { StackModuleDefinition, StackModuleName } from '@/modules/stack-module.types.js';
-import { AXIOS_GENERATED_FILES } from '@/generators/axios/axios-generator.constants.js';
-import { I18N_GENERATED_FILES } from '@/generators/i18n/i18n-generator.constants.js';
-import { TANSTACK_QUERY_GENERATED_FILES } from '@/generators/tanstack-query/tanstack-query-generator.constants.js';
-import { UNISTYLES_GENERATED_FILES } from '@/generators/unistyles/unistyles-generator.constants.js';
 
 export const STACK_MODULES = [
   {
@@ -10,7 +6,6 @@ export const STACK_MODULES = [
     label: 'Axios',
     description: 'HTTP client and base API configuration',
     dependencies: ['axios'],
-    files: AXIOS_GENERATED_FILES,
     integrationSteps: [],
   },
   {
@@ -24,7 +19,6 @@ export const STACK_MODULES = [
       'zustand',
       'react-native-mmkv',
     ],
-    files: UNISTYLES_GENERATED_FILES,
     integrationSteps: [
       'Verify React Native 0.78+ or Expo SDK 53+ with the New Architecture enabled.',
       'Import src/theme/unistyles.ts before any StyleSheet.create call.',
@@ -36,9 +30,8 @@ export const STACK_MODULES = [
   {
     name: 'zustand',
     label: 'Zustand',
-    description: 'Lightweight application state management',
+    description: 'State management with an MMKV persistence adapter',
     dependencies: ['zustand', 'react-native-mmkv', 'react-native-nitro-modules'],
-    files: ['src/stores/themeStore.ts', 'src/stores/index.ts'],
     integrationSteps: [],
     requiresNativeRebuild: true,
   },
@@ -47,8 +40,7 @@ export const STACK_MODULES = [
     label: 'TanStack Query',
     description: 'Server-state fetching, caching, and synchronization',
     dependencies: ['@tanstack/react-query'],
-    files: TANSTACK_QUERY_GENERATED_FILES,
-    integrationSteps: ['Wrap the application root with QueryProvider.'],
+    integrationSteps: ['Wrap the application root with AppProviders.'],
   },
   {
     name: 'i18n',
@@ -63,7 +55,6 @@ export const STACK_MODULES = [
     ],
     expoDependencies: ['expo-localization'],
     reactNativeDependencies: ['react-native-localize'],
-    files: I18N_GENERATED_FILES,
     integrationSteps: ['Import src/i18n/config.ts before the application renders.'],
     requiresNativeRebuild: true,
   },

@@ -2,7 +2,7 @@ import type { ProjectDetection } from '@/core/detect-project.types.js';
 import type { StackModuleName } from '@/modules/stack-module.types.js';
 
 export type PreviewDependencyStatus = 'install' | 'existing';
-export type PreviewFileStatus = 'create' | 'conflict';
+export type PreviewFileStatus = 'create' | 'unchanged' | 'conflict';
 
 export interface PreviewDependency {
   name: string;
@@ -27,6 +27,11 @@ export interface SetupPreview {
   warnings: string[];
 }
 
+export interface SetupPlan {
+  preview: SetupPreview;
+  foundation: RenderedFoundation;
+}
+
 export interface PreviewEntrySources {
   name: string;
   requestedBy: StackModuleName[];
@@ -37,3 +42,4 @@ export interface PreviewPackageJson {
   devDependencies?: unknown;
   peerDependencies?: unknown;
 }
+import type { RenderedFoundation } from '@/generators/foundation-renderer.types.js';

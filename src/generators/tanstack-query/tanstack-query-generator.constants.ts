@@ -5,7 +5,6 @@ export const TANSTACK_QUERY_RELATIVE_FILES = [
   'query/index.ts',
   'providers/QueryProvider.tsx',
   'providers/QueryProvider.types.ts',
-  'providers/index.ts',
 ] as const;
 
 export const TANSTACK_QUERY_GENERATED_FILES = TANSTACK_QUERY_RELATIVE_FILES.map(
