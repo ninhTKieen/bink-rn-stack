@@ -8,6 +8,7 @@ import { detectProject } from '@/core/detect-project.js';
 import { FoundationWriteConflictError } from '@/core/foundation-writer.js';
 import type { GenerationManifest } from '@/core/generation-manifest.types.js';
 import { executeSetupPlan } from '@/core/setup-executor.js';
+import { NavigationReplacementError } from '@/core/setup-executor.js';
 import { buildSetupPlan } from '@/core/setup-preview.js';
 
 const temporaryDirectories: string[] = [];
@@ -105,4 +106,53 @@ void test('does not generate files when dependency installation fails', async ()
 
   await assert.rejects(access(path.join(root, 'src/api/client.ts')));
   await assert.rejects(access(path.join(root, '.bink-rn-stack.json')));
+});
+
+void test('records the selected navigation library in the manifest', async () => {
+  const root = await createExpoApp({
+    'expo-constants': '^1.0.0',
+    'expo-linking': '^1.0.0',
+    'expo-router': '^1.0.0',
+    'expo-status-bar': '^1.0.0',
+    'react-native-safe-area-context': '^1.0.0',
+    'react-native-screens': '^1.0.0',
+  });
+  const plan = await buildSetupPlan(await detectProject(root), ['navigation'], {
+    navigation: 'expo-router',
+  });
+
+  await executeSetupPlan(plan, '1.2.3', { force: true });
+
+  const manifest = JSON.parse(
+    await readFile(path.join(root, '.bink-rn-stack.json'), 'utf8'),
+  ) as GenerationManifest;
+  assert.equal(manifest.navigation, 'expo-router');
+  await access(path.join(root, 'src/app/_layout.tsx'));
+});
+
+void test('blocks navigation replacement before dependency installation without force', async () => {
+  const root = await createExpoApp({ 'expo-router': '^57.0.0' });
+  const packageJson = JSON.parse(await readFile(path.join(root, 'package.json'), 'utf8')) as Record<
+    string,
+    unknown
+  >;
+  packageJson.main = 'expo-router/entry';
+  await writeFile(path.join(root, 'package.json'), JSON.stringify(packageJson));
+  const plan = await buildSetupPlan(await detectProject(root), ['navigation'], {
+    navigation: 'react-navigation',
+  });
+  let installCalls = 0;
+
+  await assert.rejects(
+    executeSetupPlan(plan, '1.2.3', {
+      commandRunner: () => {
+        installCalls += 1;
+        return Promise.resolve();
+      },
+    }),
+    NavigationReplacementError,
+  );
+
+  assert.equal(installCalls, 0);
+  await assert.rejects(access(path.join(root, 'src/navigation/RootNavigator.tsx')));
 });

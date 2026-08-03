@@ -96,3 +96,16 @@ void test('rejects duplicate paths with different generated contents', () => {
       error instanceof FoundationFileConflictError && error.path === 'src/shared.ts',
   );
 });
+
+void test('composes selected foundations into the navigation root', async () => {
+  const foundation = await renderSelectedFoundations({
+    projectKind: 'expo',
+    selectedModules: ['navigation', 'tanstack-query', 'i18n'],
+    navigation: 'expo-router',
+  });
+  const layout = foundation.files.find(({ path }) => path === 'src/app/_layout.tsx');
+
+  assert.equal(foundation.navigation, 'expo-router');
+  assert.match(layout?.content ?? '', /import '\.\.\/i18n\/config';/u);
+  assert.match(layout?.content ?? '', /<AppProviders>\{navigator\}<\/AppProviders>/u);
+});

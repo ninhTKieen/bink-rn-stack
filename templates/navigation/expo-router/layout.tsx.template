@@ -1,0 +1,7 @@
+{{foundationImports}}{{providerImport}}import { Stack } from 'expo-router';
+
+export default function RootLayout() {
+  const navigator = <Stack />;
+
+{{rootReturn}}
+}

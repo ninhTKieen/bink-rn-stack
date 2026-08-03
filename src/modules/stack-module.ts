@@ -2,6 +2,13 @@ import type { StackModuleDefinition, StackModuleName } from '@/modules/stack-mod
 
 export const STACK_MODULES = [
   {
+    name: 'navigation',
+    label: 'Navigation',
+    description: 'React Navigation or Expo Router application foundation',
+    dependencies: [],
+    integrationSteps: [],
+  },
+  {
     name: 'axios',
     label: 'Axios',
     description: 'HTTP client and base API configuration',

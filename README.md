@@ -25,6 +25,7 @@ flowchart LR
 
 - Detects Expo and bare React Native projects.
 - Detects npm, Yarn, pnpm, or Bun.
+- Generates React Navigation for bare projects and offers React Navigation or Expo Router for Expo.
 - Offers an interactive module selector or non-interactive flags.
 - Shows dependencies, generated files, conflicts, and native steps before changing anything.
 - Installs only missing dependencies.
@@ -35,6 +36,7 @@ flowchart LR
 
 | Module             | Foundation                                                                               | Native rebuild |
 | ------------------ | ---------------------------------------------------------------------------------------- | :------------: |
+| **Navigation**     | Typed React Navigation native stack or an Expo Router file-based root                    |      Yes       |
 | **Axios**          | Configured client, API configuration, typed errors, and shared exports                   |       No       |
 | **Unistyles**      | Themes, breakpoints, type augmentation, runtime configuration, and persisted theme state |      Yes       |
 | **Zustand**        | State management foundation with an MMKV persistence adapter                             |      Yes       |
@@ -57,7 +59,7 @@ Run the CLI directly from npm—no cloning or global installation required:
 npx bink-rn-stack init /path/to/your-app
 ```
 
-The interactive flow asks whether to install the complete stack or select individual modules. After selection, it prints the full setup preview and asks for confirmation.
+The interactive flow asks whether to install the complete stack or select individual modules. When Navigation is selected, the CLI first detects any existing setup. Existing navigation can be preserved; otherwise bare React Native uses React Navigation automatically, while Expo asks you to choose React Navigation or Expo Router. The CLI then prints the full setup preview and asks for confirmation.
 
 ## Usage
 
@@ -73,10 +75,23 @@ npx bink-rn-stack init ../my-app
 npx bink-rn-stack init ../my-app --modules all
 ```
 
+Expo will still ask which navigation library to use. Pass the choice explicitly for scripts:
+
+```bash
+npx bink-rn-stack init ../my-app --modules all --navigation expo-router
+npx bink-rn-stack init ../my-app --modules all --navigation react-navigation
+```
+
+Preserve an existing navigation setup explicitly with:
+
+```bash
+npx bink-rn-stack init ../my-app --modules all --navigation keep
+```
+
 ### Install selected modules
 
 ```bash
-npx bink-rn-stack init ../my-app --modules axios,zustand,tanstack-query
+npx bink-rn-stack init ../my-app --modules navigation,axios,tanstack-query --navigation expo-router
 ```
 
 ### Preview without making changes
@@ -88,7 +103,7 @@ npx bink-rn-stack init ../my-app --modules all --dry-run
 ### Run non-interactively
 
 ```bash
-npx bink-rn-stack init ../my-app --modules all --yes
+npx bink-rn-stack init ../my-app --modules all --navigation expo-router --yes
 ```
 
 ### Inspect project detection as JSON
@@ -106,17 +121,18 @@ npx bink-rn-stack init [path] [options]
 | Option                    | Description                                                          |
 | ------------------------- | -------------------------------------------------------------------- |
 | `-m, --modules <modules>` | Select `all` or a comma-separated module list                        |
+| `--navigation <library>`  | Select `keep`, `react-navigation`, or `expo-router`                  |
 | `--dry-run`               | Print the complete preview without installing or generating anything |
 | `-y, --yes`               | Apply the preview without asking for confirmation                    |
 | `--force`                 | Replace existing generated paths whose contents differ               |
 | `--json`                  | Print only the project-detection result as JSON                      |
 | `-h, --help`              | Show command help                                                    |
 
-Available module names are `axios`, `unistyles`, `zustand`, `tanstack-query`, and `i18n`.
+Available module names are `navigation`, `axios`, `unistyles`, `zustand`, `tanstack-query`, and `i18n`.
 
 ## Generated structure
 
-Selecting every module produces this foundation:
+The non-navigation modules compose this shared foundation:
 
 ```text
 src/
@@ -159,12 +175,48 @@ src/
 
 The exact tree depends on the selected modules. Shared barrel files are composed from the final selection.
 
+React Navigation adds a typed native stack:
+
+```text
+src/
+├── navigation/
+│   ├── index.ts
+│   ├── RootNavigator.tsx
+│   └── types.ts
+└── screens/
+    └── HomeScreen.tsx
+```
+
+Expo Router uses the recommended `src/app` file-based structure:
+
+```text
+src/
+└── app/
+    ├── _layout.tsx
+    └── index.tsx
+```
+
+When TanStack Query, i18n, or Unistyles are selected with Navigation, their provider and initialization imports are composed directly into the generated navigation root.
+
+## Existing navigation
+
+The CLI detects Expo Router and React Navigation from application dependencies, the configured entry point, route layouts, and source imports.
+
+When navigation already exists, the interactive choices become:
+
+- **Keep existing navigation** — recommended; installs no navigation packages and writes no navigation files.
+- **Regenerate the detected library** — requires `--force`.
+- **Switch libraries** — requires `--force` and may require manual cleanup of old dependencies, routes, and entry configuration.
+
+Non-interactive runs preserve detected navigation by default. Use `--navigation keep` to make that intention explicit. The other selected foundations are still generated, and the preview prints the steps required to integrate them into the existing navigation root.
+
 ## Preview and safety
 
 Every normal run displays a preview before applying the setup. The preview includes:
 
 - Detected project type, root, and package manager.
 - Selected modules.
+- Selected navigation library when Navigation is included.
 - Dependencies that will be installed or skipped.
 - The exact package-manager command.
 - Files that will be created, left unchanged, or treated as conflicts.
@@ -176,9 +228,10 @@ Generated files follow these rules:
 - A file with identical content is left unchanged.
 - A file with different content blocks setup before dependency installation.
 - `--force` explicitly permits conflicting generated paths to be replaced.
+- Regenerating or switching detected navigation requires `--force`, even when generated paths do not directly conflict.
 - If dependency installation fails, source generation does not start.
 
-Successful runs also create `.bink-rn-stack.json`. It records the CLI version, selected modules, generated paths, and content hashes. This metadata is intended to support safe update and removal commands in the future.
+Successful runs also create `.bink-rn-stack.json`. It records the CLI version, selected modules, selected navigation library, generated paths, and content hashes. This metadata is intended to support safe update and removal commands in the future.
 
 > [!CAUTION]
 > `--force` replaces the complete contents of conflicting generated files. Always review the preview or commit your application changes first.
@@ -189,6 +242,8 @@ The CLI currently generates foundations but does not automatically rewrite the a
 
 Depending on the selection, this can include:
 
+- Rendering `RootNavigator` from the bare React Native application entry point.
+- Setting `package.json#main` to `expo-router/entry` and updating the Expo app config.
 - Importing `src/theme/unistyles.ts` before any `StyleSheet.create` call.
 - Adding the Unistyles Babel plugin.
 - Wrapping the application root with `AppProviders`.

@@ -1,3 +1,5 @@
+export { detectExistingNavigation } from '@/core/detect-navigation.js';
+export type { ExistingNavigationDetection } from '@/core/detect-navigation.types.js';
 export { detectPackageManager } from '@/core/detect-package-manager.js';
 export type {
   PackageManagerDetection,
@@ -34,7 +36,7 @@ export {
 export type { GenerationManifest } from '@/core/generation-manifest.types.js';
 export { createPackageInstallCommand } from '@/core/package-manager-command.js';
 export type { PackageManagerCommand } from '@/core/package-manager-command.types.js';
-export { executeSetupPlan } from '@/core/setup-executor.js';
+export { executeSetupPlan, NavigationReplacementError } from '@/core/setup-executor.js';
 export type { SetupExecutionOptions, SetupExecutionResult } from '@/core/setup-executor.types.js';
 export { buildSetupPlan, buildSetupPreview } from '@/core/setup-preview.js';
 export type {
@@ -43,8 +45,18 @@ export type {
   PreviewFile,
   PreviewFileStatus,
   SetupPlan,
+  SetupPlanOptions,
   SetupPreview,
 } from '@/core/setup-preview.types.js';
+export {
+  createNavigationFileRecipes,
+  renderNavigationFoundation,
+} from '@/generators/navigation/navigation-generator.js';
+export type {
+  NavigationFileRecipe,
+  NavigationGeneratorOptions,
+  RenderedNavigationFile,
+} from '@/generators/navigation/navigation-generator.types.js';
 export {
   FoundationFileConflictError,
   mergeFoundationFileContributions,
@@ -90,6 +102,20 @@ export type {
   ZustandGeneratorOptions,
 } from '@/generators/zustand/zustand-generator.types.js';
 export { STACK_MODULE_NAMES, STACK_MODULES } from '@/modules/stack-module.js';
+export {
+  getNavigationDefinition,
+  isNavigationLibrary,
+  isNavigationStrategy,
+  navigationLabel,
+  NAVIGATION_LIBRARIES,
+  NAVIGATION_STRATEGIES,
+} from '@/modules/navigation.js';
+export type {
+  NavigationFoundationDefinition,
+  NavigationLibrary,
+  NavigationSelectionContext,
+  NavigationStrategy,
+} from '@/modules/navigation.types.js';
 export type {
   ModuleSelectionMode,
   StackModuleDefinition,

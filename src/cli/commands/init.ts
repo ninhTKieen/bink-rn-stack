@@ -3,11 +3,13 @@ import type { Command } from 'commander';
 import type { InitOptions } from '@/cli/commands/init.types.js';
 import { formatSetupPreview } from '@/cli/output/format-setup-preview.js';
 import { promptToApplySetup } from '@/cli/prompts/confirm-setup.js';
+import { selectNavigationLibrary } from '@/cli/prompts/select-navigation.js';
 import { parseModuleOption, promptForModules } from '@/cli/prompts/select-modules.js';
 import { CLI_VERSION } from '@/configs/constants.js';
+import { detectExistingNavigation } from '@/core/detect-navigation.js';
 import { detectProject, ProjectDetectionError } from '@/core/detect-project.js';
 import { FoundationWriteConflictError } from '@/core/foundation-writer.js';
-import { executeSetupPlan } from '@/core/setup-executor.js';
+import { executeSetupPlan, NavigationReplacementError } from '@/core/setup-executor.js';
 import { buildSetupPlan } from '@/core/setup-preview.js';
 
 function projectLabel(kind: 'expo' | 'react-native'): string {
@@ -24,8 +26,12 @@ export function registerInitCommand(program: Command): void {
     .option('--force', 'overwrite generated files that differ from the preview')
     .option('--json', 'print the detection result as JSON')
     .option(
+      '--navigation <library>',
+      'choose keep, react-navigation, or expo-router when navigation is selected',
+    )
+    .option(
       '-m, --modules <modules>',
-      'select all or a comma-separated list: axios, unistyles, zustand, tanstack-query, i18n',
+      'select all or a comma-separated list: navigation, axios, unistyles, zustand, tanstack-query, i18n',
     )
     .action(async (targetPath: string, options: InitOptions) => {
       const result = await detectProject(targetPath);
@@ -50,13 +56,29 @@ export function registerInitCommand(program: Command): void {
         options.modules === undefined
           ? await promptForModules()
           : parseModuleOption(options.modules);
-      const plan = await buildSetupPlan(result, selectedModules);
+      const existingNavigation = selectedModules.includes('navigation')
+        ? await detectExistingNavigation(result)
+        : { libraries: [], evidence: {} };
+      const navigation = await selectNavigationLibrary(
+        result.kind,
+        selectedModules,
+        existingNavigation,
+        options.navigation,
+      );
+      const plan = await buildSetupPlan(result, selectedModules, {
+        ...(navigation === undefined ? {} : { navigation }),
+        existingNavigation,
+      });
 
       process.stdout.write(`${formatSetupPreview(plan.preview)}\n`);
 
       if (options.dryRun === true) {
         process.stdout.write('\nDry run complete. No changes were made.\n');
         return;
+      }
+
+      if (plan.preview.navigationReplacement && options.force !== true) {
+        throw new NavigationReplacementError();
       }
 
       const conflicts = plan.preview.files

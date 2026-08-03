@@ -1,5 +1,6 @@
 import type { SetupPreview } from '@/core/setup-preview.types.js';
 import { moduleLabels } from '@/modules/stack-module.js';
+import { navigationLabel } from '@/modules/navigation.js';
 
 import { formatFileTree } from '@/cli/output/format-file-tree.js';
 
@@ -17,7 +18,35 @@ function packageManagerLabel(preview: SetupPreview): string {
   return `${label}${version === undefined ? '' : ` ${version}`}`;
 }
 
+function existingNavigationLabel(preview: SetupPreview): string | undefined {
+  const detection = preview.existingNavigation;
+
+  if (detection === undefined || detection.libraries.length === 0) {
+    return undefined;
+  }
+
+  if (detection.primary !== undefined) {
+    return navigationLabel(detection.primary);
+  }
+
+  return detection.libraries.map(navigationLabel).join(' and ');
+}
+
+function selectedNavigationLabel(preview: SetupPreview): string | undefined {
+  if (preview.navigation === undefined) {
+    return undefined;
+  }
+
+  if (preview.navigation === 'keep') {
+    return `Keep existing ${existingNavigationLabel(preview) ?? 'navigation'}`;
+  }
+
+  return navigationLabel(preview.navigation);
+}
+
 export function formatSetupPreview(preview: SetupPreview): string {
+  const navigation = selectedNavigationLabel(preview);
+  const existingNavigation = existingNavigationLabel(preview);
   const lines = [
     '',
     'Setup preview',
@@ -26,6 +55,8 @@ export function formatSetupPreview(preview: SetupPreview): string {
     `Root: ${preview.project.root}`,
     `Package manager: ${packageManagerLabel(preview)}`,
     `Selected modules: ${moduleLabels(preview.selectedModules).join(', ')}`,
+    ...(existingNavigation === undefined ? [] : [`Existing navigation: ${existingNavigation}`]),
+    ...(navigation === undefined ? [] : [`Navigation: ${navigation}`]),
     '',
     'Dependencies',
   ];

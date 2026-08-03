@@ -5,6 +5,7 @@ import { ModuleSelectionError, parseModuleOption } from '@/cli/prompts/select-mo
 
 void test('selects every module with the all option', () => {
   assert.deepEqual(parseModuleOption('all'), [
+    'navigation',
     'axios',
     'unistyles',
     'zustand',

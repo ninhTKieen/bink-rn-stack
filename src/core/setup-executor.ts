@@ -4,12 +4,24 @@ import { writeGenerationManifest } from '@/core/generation-manifest.js';
 import type { SetupExecutionOptions, SetupExecutionResult } from '@/core/setup-executor.types.js';
 import type { SetupPlan } from '@/core/setup-preview.types.js';
 
+export class NavigationReplacementError extends Error {
+  constructor() {
+    super('Existing navigation cannot be regenerated or switched without --force.');
+    this.name = 'NavigationReplacementError';
+  }
+}
+
 export async function executeSetupPlan(
   plan: SetupPlan,
   version: string,
   options: SetupExecutionOptions = {},
 ): Promise<SetupExecutionResult> {
   const force = options.force === true;
+
+  if (plan.preview.navigationReplacement && !force) {
+    throw new NavigationReplacementError();
+  }
+
   const conflicts = plan.preview.files
     .filter(({ status }) => status === 'conflict')
     .map(({ path }) => path);

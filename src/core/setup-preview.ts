@@ -1,6 +1,8 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
+import { detectExistingNavigation } from '@/core/detect-navigation.js';
+import type { ExistingNavigationDetection } from '@/core/detect-navigation.types.js';
 import { createPackageInstallCommand } from '@/core/package-manager-command.js';
 import type {
   PreviewDependency,
@@ -8,10 +10,13 @@ import type {
   PreviewFile,
   PreviewPackageJson,
   SetupPlan,
+  SetupPlanOptions,
   SetupPreview,
 } from '@/core/setup-preview.types.js';
 import { renderSelectedFoundations } from '@/generators/foundation-renderer.js';
 import { STACK_MODULES } from '@/modules/stack-module.js';
+import { getNavigationDefinition } from '@/modules/navigation.js';
+import type { NavigationStrategy } from '@/modules/navigation.types.js';
 import type { StackModuleDefinition, StackModuleName } from '@/modules/stack-module.types.js';
 import type { ProjectDetection } from '@/core/detect-project.types.js';
 
@@ -89,16 +94,109 @@ function uniqueValues(values: readonly string[]): string[] {
   return [...new Set(values)];
 }
 
+function resolvePlanNavigation(
+  project: ProjectDetection,
+  selectedModules: readonly StackModuleName[],
+  requestedNavigation: NavigationStrategy | undefined,
+  existingNavigation: ExistingNavigationDetection,
+): NavigationStrategy | undefined {
+  const navigationSelected = selectedModules.includes('navigation');
+
+  if (!navigationSelected) {
+    if (requestedNavigation !== undefined) {
+      throw new Error('Navigation cannot be configured when the module is not selected.');
+    }
+
+    return undefined;
+  }
+
+  if (requestedNavigation === 'keep' && existingNavigation.libraries.length === 0) {
+    throw new Error('Existing navigation is required when navigation is set to keep.');
+  }
+
+  if (project.kind === 'react-native') {
+    if (requestedNavigation === 'expo-router') {
+      throw new Error('Expo Router cannot be configured for bare React Native.');
+    }
+
+    return (
+      requestedNavigation ?? (existingNavigation.libraries.length > 0 ? 'keep' : 'react-navigation')
+    );
+  }
+
+  if (requestedNavigation === undefined) {
+    if (existingNavigation.libraries.length > 0) {
+      return 'keep';
+    }
+
+    throw new Error('Choose React Navigation or Expo Router for the Expo project.');
+  }
+
+  return requestedNavigation;
+}
+
+function integrationStepsForDefinition(
+  definition: StackModuleDefinition,
+  generatedNavigation: boolean,
+  navigation: NavigationStrategy | undefined,
+): readonly string[] {
+  if (definition.name === 'navigation') {
+    if (navigation === 'keep') {
+      return ['Keep the existing navigation dependencies and source files.'];
+    }
+
+    return navigation === undefined ? [] : getNavigationDefinition(navigation).integrationSteps;
+  }
+
+  if (!generatedNavigation) {
+    return definition.integrationSteps;
+  }
+
+  if (definition.name === 'tanstack-query' || definition.name === 'i18n') {
+    return [];
+  }
+
+  if (definition.name === 'unistyles') {
+    return definition.integrationSteps.filter(
+      (step) => !step.startsWith('Import src/theme/unistyles.ts'),
+    );
+  }
+
+  return definition.integrationSteps;
+}
+
 export async function buildSetupPlan(
   project: ProjectDetection,
   selectedModules: readonly StackModuleName[],
+  options: SetupPlanOptions = {},
 ): Promise<SetupPlan> {
   const definitions = selectedDefinitions(selectedModules);
+  const existingNavigation = selectedModules.includes('navigation')
+    ? (options.existingNavigation ?? (await detectExistingNavigation(project)))
+    : { libraries: [], evidence: {} };
+  const navigation = resolvePlanNavigation(
+    project,
+    selectedModules,
+    options.navigation,
+    existingNavigation,
+  );
+  const navigationDefinition =
+    navigation === undefined || navigation === 'keep'
+      ? undefined
+      : getNavigationDefinition(navigation);
+  const navigationReplacement =
+    navigation !== undefined && navigation !== 'keep' && existingNavigation.libraries.length > 0;
+  const renderedNavigation = navigation === 'keep' ? existingNavigation.primary : navigation;
   const installedDependencies = await readInstalledDependencies(project.packageJsonPath);
   const dependencySources = new Map<string, PreviewEntrySources>();
 
   for (const definition of definitions) {
-    for (const dependency of dependenciesForProject(definition, project.kind)) {
+    const definitionDependencies =
+      definition.name === 'navigation' && navigationDefinition !== undefined
+        ? navigationDefinition.dependencies
+        : dependenciesForProject(definition, project.kind);
+
+    for (const dependency of definitionDependencies) {
       addEntrySource(dependencySources, dependency, definition.name);
     }
   }
@@ -117,6 +215,8 @@ export async function buildSetupPlan(
   const foundation = await renderSelectedFoundations({
     projectKind: project.kind,
     selectedModules,
+    ...(renderedNavigation === undefined ? {} : { navigation: renderedNavigation }),
+    ...(navigation === 'keep' ? { preserveNavigation: true } : {}),
   });
   const files: PreviewFile[] = await Promise.all(
     foundation.files.map(async ({ path: filePath, content, requestedBy }) => ({
@@ -144,8 +244,17 @@ export async function buildSetupPlan(
     warnings.push('Existing files are conflicts and will not be overwritten without --force.');
   }
 
+  if (navigationReplacement) {
+    warnings.push(
+      'Existing navigation will only be regenerated or switched with --force; manual cleanup may still be required.',
+    );
+  }
+
   const requiresNativeRebuild = definitions.some(
-    ({ requiresNativeRebuild }) => requiresNativeRebuild === true,
+    ({ name, requiresNativeRebuild }) =>
+      (name === 'navigation'
+        ? navigationDefinition?.requiresNativeRebuild
+        : requiresNativeRebuild) === true,
   );
   const nativeSteps = requiresNativeRebuild
     ? project.kind === 'expo'
@@ -160,10 +269,21 @@ export async function buildSetupPlan(
   const preview: SetupPreview = {
     project,
     selectedModules: foundation.selectedModules,
+    ...(navigation === undefined ? {} : { navigation }),
+    ...(selectedModules.includes('navigation') ? { existingNavigation } : {}),
+    navigationReplacement,
     dependencies,
     files,
     ...(installCommand === undefined ? {} : { installCommand: installCommand.display }),
-    integrationSteps: uniqueValues(definitions.flatMap(({ integrationSteps }) => integrationSteps)),
+    integrationSteps: uniqueValues(
+      definitions.flatMap((definition) =>
+        integrationStepsForDefinition(
+          definition,
+          navigation !== undefined && navigation !== 'keep',
+          navigation,
+        ),
+      ),
+    ),
     nativeSteps,
     warnings,
   };
@@ -174,6 +294,7 @@ export async function buildSetupPlan(
 export async function buildSetupPreview(
   project: ProjectDetection,
   selectedModules: readonly StackModuleName[],
+  options: SetupPlanOptions = {},
 ): Promise<SetupPreview> {
-  return (await buildSetupPlan(project, selectedModules)).preview;
+  return (await buildSetupPlan(project, selectedModules, options)).preview;
 }

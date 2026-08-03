@@ -119,3 +119,123 @@ void test('recognizes generated files whose contents are already up to date', as
   assert.ok(!preview.warnings.some((warning) => warning.includes('will not be overwritten')));
   assert.match(formatSetupPreview(preview), /config\.ts \(unchanged\)/);
 });
+
+void test('defaults bare React Native navigation to the latest React Navigation packages', async () => {
+  const root = await createApp({
+    name: 'native-navigation-preview',
+    dependencies: {
+      'react-native': '0.83.0',
+    },
+  });
+  await writeFile(path.join(root, 'yarn.lock'), '');
+
+  const preview = await buildSetupPreview(await detectProject(root), ['navigation']);
+
+  assert.equal(preview.navigation, 'react-navigation');
+  assert.deepEqual(
+    preview.dependencies.map(({ name }) => name),
+    [
+      '@react-navigation/native',
+      '@react-navigation/native-stack',
+      'react-native-screens',
+      'react-native-safe-area-context',
+    ],
+  );
+  assert.ok(
+    preview.files.some(({ path: filePath }) => filePath === 'src/navigation/RootNavigator.tsx'),
+  );
+  assert.match(preview.installCommand ?? '', /^yarn add @react-navigation\/native /u);
+});
+
+void test('previews Expo Router dependencies, routes, and integration', async () => {
+  const root = await createApp({
+    name: 'expo-router-preview',
+    packageManager: 'pnpm@10.0.0',
+    dependencies: {
+      expo: '^57.0.0',
+      'react-native': '0.86.0',
+    },
+  });
+
+  const preview = await buildSetupPreview(await detectProject(root), ['navigation'], {
+    navigation: 'expo-router',
+  });
+
+  assert.equal(preview.navigation, 'expo-router');
+  assert.deepEqual(
+    preview.dependencies.map(({ name }) => name),
+    [
+      'expo-router',
+      'react-native-safe-area-context',
+      'react-native-screens',
+      'expo-linking',
+      'expo-constants',
+      'expo-status-bar',
+    ],
+  );
+  assert.deepEqual(
+    preview.files.map(({ path: filePath }) => filePath),
+    ['src/app/_layout.tsx', 'src/app/index.tsx'],
+  );
+  assert.match(preview.installCommand ?? '', /^pnpm add expo-router /u);
+  assert.ok(preview.integrationSteps.some((step) => step.includes('expo-router/entry')));
+});
+
+void test('preserves existing navigation without installing or generating it again', async () => {
+  const root = await createApp({
+    name: 'existing-router-preview',
+    main: 'expo-router/entry',
+    packageManager: 'yarn@1.22.22',
+    dependencies: {
+      expo: '^57.0.0',
+      'expo-router': '^57.0.0',
+      'react-native': '0.86.0',
+    },
+  });
+
+  const preview = await buildSetupPreview(
+    await detectProject(root),
+    ['navigation', 'tanstack-query'],
+    { navigation: 'keep' },
+  );
+
+  assert.equal(preview.navigation, 'keep');
+  assert.equal(preview.navigationReplacement, false);
+  assert.deepEqual(preview.existingNavigation?.libraries, ['expo-router']);
+  assert.deepEqual(
+    preview.dependencies.map(({ name }) => name),
+    ['@tanstack/react-query'],
+  );
+  assert.ok(!preview.files.some(({ path: filePath }) => filePath.startsWith('src/app/')));
+  assert.ok(
+    preview.integrationSteps.includes(
+      'Keep the existing navigation dependencies and source files.',
+    ),
+  );
+  assert.ok(preview.integrationSteps.includes('Wrap the application root with AppProviders.'));
+});
+
+void test('marks regeneration or switching as an explicit replacement', async () => {
+  const root = await createApp({
+    name: 'router-replacement-preview',
+    main: 'expo-router/entry',
+    packageManager: 'yarn@1.22.22',
+    dependencies: {
+      expo: '^57.0.0',
+      'expo-router': '^57.0.0',
+      'react-native': '0.86.0',
+    },
+  });
+
+  const preview = await buildSetupPreview(await detectProject(root), ['navigation'], {
+    navigation: 'react-navigation',
+  });
+
+  assert.equal(preview.navigationReplacement, true);
+  assert.ok(
+    preview.warnings.some((warning) =>
+      warning.includes('only be regenerated or switched with --force'),
+    ),
+  );
+  assert.ok(preview.files.some(({ path: filePath }) => filePath.startsWith('src/navigation/')));
+});

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
-import { access, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { access, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
@@ -37,6 +37,16 @@ async function runInit(root: string, ...options: string[]): Promise<string> {
   return stdout;
 }
 
+async function runAllModulesInit(root: string, ...options: string[]): Promise<string> {
+  const executable = path.join(process.cwd(), 'node_modules/.bin/tsx');
+  const { stdout } = await execFileAsync(
+    executable,
+    ['src/cli.ts', 'init', root, '--modules', 'all', ...options],
+    { cwd: process.cwd() },
+  );
+  return stdout;
+}
+
 void afterEach(async () => {
   await Promise.all(
     temporaryDirectories
@@ -67,4 +77,36 @@ void test('keeps --dry-run preview-only even when --yes is present', async () =>
   assert.match(output, /Dry run complete\. No changes were made\./u);
   await assert.rejects(access(path.join(root, 'src/api/client.ts')));
   await assert.rejects(access(path.join(root, '.bink-rn-stack.json')));
+});
+
+void test('keeps the Expo navigation choice when all modules are selected', async () => {
+  const root = await createExpoApp();
+
+  const output = await runAllModulesInit(root, '--navigation', 'expo-router', '--dry-run');
+
+  assert.match(
+    output,
+    /Selected modules: Navigation, Axios, Unistyles, Zustand, TanStack Query, i18n/u,
+  );
+  assert.match(output, /Navigation: Expo Router/u);
+  assert.match(output, /├── app\//u);
+  await assert.rejects(access(path.join(root, 'src/app/_layout.tsx')));
+});
+
+void test('preserves detected navigation by default when all modules run non-interactively', async () => {
+  const root = await createExpoApp();
+  const packageJsonPath = path.join(root, 'package.json');
+  const packageJson = JSON.parse(await readFile(packageJsonPath, 'utf8')) as {
+    main?: string;
+    dependencies: Record<string, string>;
+  };
+  packageJson.main = 'expo-router/entry';
+  packageJson.dependencies['expo-router'] = '^57.0.0';
+  await writeFile(packageJsonPath, JSON.stringify(packageJson));
+
+  const output = await runAllModulesInit(root, '--dry-run');
+
+  assert.match(output, /Existing navigation: Expo Router/u);
+  assert.match(output, /Navigation: Keep existing Expo Router/u);
+  assert.doesNotMatch(output, /src\/app\/_layout\.tsx/u);
 });

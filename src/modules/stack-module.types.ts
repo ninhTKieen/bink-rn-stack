@@ -1,4 +1,5 @@
-export type StackModuleName = 'axios' | 'unistyles' | 'zustand' | 'tanstack-query' | 'i18n';
+export type StackModuleName =
+  'navigation' | 'axios' | 'unistyles' | 'zustand' | 'tanstack-query' | 'i18n';
 
 export interface StackModuleDefinition {
   name: StackModuleName;

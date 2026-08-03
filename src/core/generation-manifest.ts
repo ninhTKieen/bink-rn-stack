@@ -5,6 +5,7 @@ import path from 'node:path';
 import type { GenerationManifest } from '@/core/generation-manifest.types.js';
 import type { RenderedFoundation } from '@/generators/foundation-renderer.types.js';
 import { STACK_MODULE_NAMES } from '@/modules/stack-module.js';
+import { isNavigationLibrary } from '@/modules/navigation.js';
 import type { StackModuleName } from '@/modules/stack-module.types.js';
 
 export const GENERATION_MANIFEST_FILENAME = '.bink-rn-stack.json';
@@ -32,6 +33,9 @@ function parseManifest(value: unknown): GenerationManifest | undefined {
   return {
     version: typeof value.version === 'string' ? value.version : 'unknown',
     modules,
+    ...(typeof value.navigation === 'string' && isNavigationLibrary(value.navigation)
+      ? { navigation: value.navigation }
+      : {}),
     files,
   };
 }
@@ -67,6 +71,11 @@ export async function writeGenerationManifest(
   const manifest: GenerationManifest = {
     version,
     modules,
+    ...(foundation.navigation === undefined
+      ? existingManifest?.navigation === undefined
+        ? {}
+        : { navigation: existingManifest.navigation }
+      : { navigation: foundation.navigation }),
     files: {
       ...(existingManifest?.files ?? {}),
       ...Object.fromEntries(foundation.files.map((file) => [file.path, contentHash(file.content)])),

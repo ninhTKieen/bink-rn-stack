@@ -3,5 +3,6 @@ export interface InitOptions {
   force?: boolean;
   json?: boolean;
   modules?: string;
+  navigation?: string;
   yes?: boolean;
 }

@@ -8,6 +8,7 @@ import type {
 } from '@/generators/foundation-renderer.types.js';
 import type { RenderedGeneratorFile } from '@/generators/generator.types.js';
 import { renderI18nFoundation } from '@/generators/i18n/i18n-generator.js';
+import { renderNavigationFoundation } from '@/generators/navigation/navigation-generator.js';
 import { renderTanstackQueryFoundation } from '@/generators/tanstack-query/tanstack-query-generator.js';
 import { renderUnistylesFoundation } from '@/generators/unistyles/unistyles-generator.js';
 import { renderZustandFoundation } from '@/generators/zustand/zustand-generator.js';
@@ -62,6 +63,20 @@ async function renderModuleFoundation(
   const storageIdOption = options.storageId === undefined ? {} : { storageId: options.storageId };
 
   switch (moduleName) {
+    case 'navigation':
+      if (options.preserveNavigation === true) {
+        return [];
+      }
+
+      if (options.navigation === undefined) {
+        throw new Error('A navigation library is required when navigation is selected.');
+      }
+
+      return await renderNavigationFoundation({
+        library: options.navigation,
+        selectedModules: options.selectedModules,
+        ...sourceRootOption,
+      });
     case 'axios':
       return await renderAxiosFoundation({
         ...sourceRootOption,
@@ -125,6 +140,8 @@ export async function renderSelectedFoundations(
 
   return {
     selectedModules,
+    ...(options.navigation === undefined ? {} : { navigation: options.navigation }),
+    ...(options.preserveNavigation === true ? { preservedNavigation: true } : {}),
     files: mergeFoundationFileContributions(contributions),
   };
 }
