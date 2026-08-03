@@ -34,14 +34,15 @@ flowchart LR
 
 ## Supported modules
 
-| Module             | Foundation                                                                               | Native rebuild |
-| ------------------ | ---------------------------------------------------------------------------------------- | :------------: |
-| **Navigation**     | Typed React Navigation native stack or an Expo Router file-based root                    |      Yes       |
-| **Axios**          | Configured client, API configuration, typed errors, and shared exports                   |       No       |
-| **Unistyles**      | Themes, breakpoints, type augmentation, runtime configuration, and persisted theme state |      Yes       |
-| **Zustand**        | State management foundation with an MMKV persistence adapter                             |      Yes       |
-| **TanStack Query** | Query client, React Native lifecycle handling, and provider composition                  |       No       |
-| **i18n**           | Typed resources, device-language detection, MMKV persistence, and language state         |      Yes       |
+| Module                    | Foundation                                                                               | Native rebuild |
+| ------------------------- | ---------------------------------------------------------------------------------------- | :------------: |
+| **Navigation**            | Typed React Navigation native stack or an Expo Router file-based root                    |      Yes       |
+| **Axios**                 | Configured client, API configuration, typed errors, and shared exports                   |       No       |
+| **Unistyles**             | Themes, breakpoints, type augmentation, runtime configuration, and persisted theme state |      Yes       |
+| **Zustand**               | State management foundation with an MMKV persistence adapter                             |      Yes       |
+| **React Hook Form + Zod** | Typed React Native input, example schema, inferred values, and reusable form hook        |       No       |
+| **TanStack Query**        | Query client, React Native lifecycle handling, and provider composition                  |       No       |
+| **i18n**                  | Typed resources, device-language detection, MMKV persistence, and language state         |      Yes       |
 
 When multiple modules need the same foundation, such as MMKV storage, the generated output is shared instead of duplicated.
 
@@ -91,7 +92,7 @@ npx bink-rn-stack init ../my-app --modules all --navigation keep
 ### Install selected modules
 
 ```bash
-npx bink-rn-stack init ../my-app --modules navigation,axios,tanstack-query --navigation expo-router
+npx bink-rn-stack init ../my-app --modules navigation,axios,react-hook-form,tanstack-query --navigation expo-router
 ```
 
 ### Preview without making changes
@@ -128,7 +129,7 @@ npx bink-rn-stack init [path] [options]
 | `--json`                  | Print only the project-detection result as JSON                      |
 | `-h, --help`              | Show command help                                                    |
 
-Available module names are `navigation`, `axios`, `unistyles`, `zustand`, `tanstack-query`, and `i18n`.
+Available module names are `navigation`, `axios`, `unistyles`, `zustand`, `react-hook-form`, `tanstack-query`, and `i18n`.
 
 ## Generated structure
 
@@ -150,6 +151,12 @@ src/
 │   ├── index.ts
 │   ├── resources.ts
 │   └── types.ts
+├── forms/
+│   ├── fields/
+│   │   └── FormTextInput.tsx
+│   ├── login/
+│   │   └── loginForm.ts
+│   └── index.ts
 ├── providers/
 │   ├── AppProviders.tsx
 │   ├── index.ts
@@ -174,6 +181,26 @@ src/
 ```
 
 The exact tree depends on the selected modules. Shared barrel files are composed from the final selection.
+
+The React Hook Form foundation includes a reusable controlled `TextInput` and an example login form whose TypeScript values are inferred from its Zod schema:
+
+```tsx
+import { FormTextInput, useLoginForm } from './forms';
+
+export function LoginForm() {
+  const { control, handleSubmit } = useLoginForm();
+
+  return (
+    <FormTextInput
+      autoCapitalize="none"
+      control={control}
+      keyboardType="email-address"
+      label="Email"
+      name="email"
+    />
+  );
+}
+```
 
 React Navigation adds a typed native stack:
 

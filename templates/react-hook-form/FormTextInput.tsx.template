@@ -1,0 +1,71 @@
+import { Controller } from 'react-hook-form';
+import type { Control, FieldValues, Path } from 'react-hook-form';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
+import type { TextInputProps } from 'react-native';
+
+export interface FormTextInputProps<TFieldValues extends FieldValues>
+  extends Omit<
+    TextInputProps,
+    'defaultValue' | 'onBlur' | 'onChange' | 'onChangeText' | 'value'
+  > {
+  control: Control<TFieldValues>;
+  label: string;
+  name: Path<TFieldValues>;
+}
+
+export function FormTextInput<TFieldValues extends FieldValues>({
+  control,
+  label,
+  name,
+  style,
+  ...textInputProps
+}: FormTextInputProps<TFieldValues>) {
+  return (
+    <Controller
+      control={control}
+      name={name}
+      render={({ field: { onBlur, onChange, value }, fieldState: { error } }) => (
+        <View style={styles.container}>
+          <Text style={styles.label}>{label}</Text>
+          <TextInput
+            {...textInputProps}
+            accessibilityLabel={textInputProps.accessibilityLabel ?? label}
+            onBlur={onBlur}
+            onChangeText={onChange}
+            style={[styles.input, error === undefined ? undefined : styles.inputError, style]}
+            value={typeof value === 'string' ? value : ''}
+          />
+          {error === undefined ? null : (
+            <Text accessibilityRole="alert" style={styles.error}>
+              {error.message}
+            </Text>
+          )}
+        </View>
+      )}
+    />
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    gap: 6,
+  },
+  error: {
+    color: '#dc2626',
+    fontSize: 12,
+  },
+  input: {
+    borderColor: '#d1d5db',
+    borderRadius: 8,
+    borderWidth: 1,
+    minHeight: 48,
+    paddingHorizontal: 12,
+  },
+  inputError: {
+    borderColor: '#dc2626',
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+});

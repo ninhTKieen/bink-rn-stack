@@ -1,0 +1,31 @@
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import type { DefaultValues, UseFormProps } from 'react-hook-form';
+import { z } from 'zod';
+
+export const loginSchema = z.object({
+  email: z.email({ error: 'Enter a valid email address' }),
+  password: z.string().min(8, 'Password must contain at least 8 characters'),
+});
+
+export type LoginFormValues = z.infer<typeof loginSchema>;
+
+export const loginFormDefaultValues: DefaultValues<LoginFormValues> = {
+  email: '',
+  password: '',
+};
+
+export type UseLoginFormOptions = Omit<
+  UseFormProps<LoginFormValues>,
+  'defaultValues' | 'resolver'
+> & {
+  defaultValues?: DefaultValues<LoginFormValues>;
+};
+
+export function useLoginForm(options: UseLoginFormOptions = {}) {
+  return useForm<LoginFormValues>({
+    ...options,
+    defaultValues: options.defaultValues ?? loginFormDefaultValues,
+    resolver: zodResolver(loginSchema),
+  });
+}

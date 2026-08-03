@@ -10,7 +10,7 @@ import {
 void test('renders and composes every selected foundation without duplicate paths', async () => {
   const foundation = await renderSelectedFoundations({
     projectKind: 'expo',
-    selectedModules: ['i18n', 'tanstack-query', 'axios', 'zustand', 'unistyles'],
+    selectedModules: ['i18n', 'tanstack-query', 'react-hook-form', 'axios', 'zustand', 'unistyles'],
     storageId: 'integrated-preferences',
     apiBaseUrl: 'https://api.integration.test',
   });
@@ -20,10 +20,15 @@ void test('renders and composes every selected foundation without duplicate path
     'axios',
     'unistyles',
     'zustand',
+    'react-hook-form',
     'tanstack-query',
     'i18n',
   ]);
   assert.equal(paths.length, new Set(paths).size);
+
+  const loginForm = foundation.files.find(({ path }) => path === 'src/forms/login/loginForm.ts');
+  assert.deepEqual(loginForm?.requestedBy, ['react-hook-form']);
+  assert.match(loginForm?.content ?? '', /zodResolver\(loginSchema\)/);
 
   const storage = foundation.files.find(({ path }) => path === 'src/stores/mmkvStorage.ts');
   assert.deepEqual(storage?.requestedBy, ['unistyles', 'zustand', 'i18n']);

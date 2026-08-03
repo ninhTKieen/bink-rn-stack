@@ -84,6 +84,15 @@ export type {
   TanstackQueryGeneratorOptions,
 } from '@/generators/tanstack-query/tanstack-query-generator.types.js';
 export {
+  createReactHookFormFileRecipes,
+  renderReactHookFormFoundation,
+} from '@/generators/react-hook-form/react-hook-form-generator.js';
+export type {
+  ReactHookFormFileRecipe,
+  ReactHookFormGeneratorOptions,
+  RenderedReactHookFormFile,
+} from '@/generators/react-hook-form/react-hook-form-generator.types.js';
+export {
   createUnistylesFileRecipes,
   renderUnistylesFoundation,
 } from '@/generators/unistyles/unistyles-generator.js';

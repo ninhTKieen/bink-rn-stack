@@ -9,6 +9,7 @@ void test('selects every module with the all option', () => {
     'axios',
     'unistyles',
     'zustand',
+    'react-hook-form',
     'tanstack-query',
     'i18n',
   ]);

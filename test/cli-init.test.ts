@@ -86,10 +86,11 @@ void test('keeps the Expo navigation choice when all modules are selected', asyn
 
   assert.match(
     output,
-    /Selected modules: Navigation, Axios, Unistyles, Zustand, TanStack Query, i18n/u,
+    /Selected modules: Navigation, Axios, Unistyles, Zustand, React Hook Form \+ Zod, TanStack Query, i18n/u,
   );
   assert.match(output, /Navigation: Expo Router/u);
   assert.match(output, /├── app\//u);
+  assert.match(output, /├── forms\//u);
   await assert.rejects(access(path.join(root, 'src/app/_layout.tsx')));
 });
 

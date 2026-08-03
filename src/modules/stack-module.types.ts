@@ -1,5 +1,5 @@
 export type StackModuleName =
-  'navigation' | 'axios' | 'unistyles' | 'zustand' | 'tanstack-query' | 'i18n';
+  'navigation' | 'axios' | 'unistyles' | 'zustand' | 'react-hook-form' | 'tanstack-query' | 'i18n';
 
 export interface StackModuleDefinition {
   name: StackModuleName;

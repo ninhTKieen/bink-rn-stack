@@ -31,7 +31,7 @@ export function registerInitCommand(program: Command): void {
     )
     .option(
       '-m, --modules <modules>',
-      'select all or a comma-separated list: navigation, axios, unistyles, zustand, tanstack-query, i18n',
+      'select all or a comma-separated list: navigation, axios, unistyles, zustand, react-hook-form, tanstack-query, i18n',
     )
     .action(async (targetPath: string, options: InitOptions) => {
       const result = await detectProject(targetPath);

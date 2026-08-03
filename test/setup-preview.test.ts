@@ -120,6 +120,31 @@ void test('recognizes generated files whose contents are already up to date', as
   assert.match(formatSetupPreview(preview), /config\.ts \(unchanged\)/);
 });
 
+void test('previews React Hook Form with Zod validation without native steps', async () => {
+  const root = await createApp({
+    name: 'forms-preview',
+    packageManager: 'yarn@1.22.22',
+    dependencies: {
+      expo: '^57.0.0',
+      'react-native': '0.86.0',
+    },
+  });
+
+  const preview = await buildSetupPreview(await detectProject(root), ['react-hook-form']);
+
+  assert.deepEqual(
+    preview.dependencies.map(({ name }) => name),
+    ['react-hook-form', 'zod', '@hookform/resolvers'],
+  );
+  assert.deepEqual(
+    preview.files.map(({ path: filePath }) => filePath),
+    ['src/forms/fields/FormTextInput.tsx', 'src/forms/login/loginForm.ts', 'src/forms/index.ts'],
+  );
+  assert.equal(preview.installCommand, 'yarn add react-hook-form zod @hookform/resolvers');
+  assert.deepEqual(preview.integrationSteps, []);
+  assert.deepEqual(preview.nativeSteps, []);
+});
+
 void test('defaults bare React Native navigation to the latest React Navigation packages', async () => {
   const root = await createApp({
     name: 'native-navigation-preview',

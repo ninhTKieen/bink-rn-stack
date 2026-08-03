@@ -9,6 +9,7 @@ import type {
 import type { RenderedGeneratorFile } from '@/generators/generator.types.js';
 import { renderI18nFoundation } from '@/generators/i18n/i18n-generator.js';
 import { renderNavigationFoundation } from '@/generators/navigation/navigation-generator.js';
+import { renderReactHookFormFoundation } from '@/generators/react-hook-form/react-hook-form-generator.js';
 import { renderTanstackQueryFoundation } from '@/generators/tanstack-query/tanstack-query-generator.js';
 import { renderUnistylesFoundation } from '@/generators/unistyles/unistyles-generator.js';
 import { renderZustandFoundation } from '@/generators/zustand/zustand-generator.js';
@@ -87,6 +88,8 @@ async function renderModuleFoundation(
       return await renderUnistylesFoundation({ ...sourceRootOption, ...storageIdOption });
     case 'zustand':
       return await renderZustandFoundation({ ...sourceRootOption, ...storageIdOption });
+    case 'react-hook-form':
+      return await renderReactHookFormFoundation(sourceRootOption);
     case 'tanstack-query':
       return await renderTanstackQueryFoundation(sourceRootOption);
     case 'i18n':

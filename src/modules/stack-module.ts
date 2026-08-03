@@ -43,6 +43,13 @@ export const STACK_MODULES = [
     requiresNativeRebuild: true,
   },
   {
+    name: 'react-hook-form',
+    label: 'React Hook Form + Zod',
+    description: 'Typed React Native forms with Zod schema validation',
+    dependencies: ['react-hook-form', 'zod', '@hookform/resolvers'],
+    integrationSteps: [],
+  },
+  {
     name: 'tanstack-query',
     label: 'TanStack Query',
     description: 'Server-state fetching, caching, and synchronization',
