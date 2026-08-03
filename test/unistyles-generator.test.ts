@@ -32,8 +32,10 @@ void test('renders typed themes, breakpoints, and persisted theme state', async 
   );
   assert.match(
     contentsByPath.get('src/stores/themeStore.ts') ?? '',
-    /UnistylesRuntime\.setTheme\(preference\)/,
+    /UnistylesRuntime\.setTheme\(preference as never\)/,
   );
+  assert.match(contentsByPath.get('src/stores/themeStore.ts') ?? '', /export interface ThemeState/);
+  assert.ok(!contentsByPath.has('src/stores/themeStore.types.ts'));
   assert.match(
     contentsByPath.get('src/stores/mmkvStorage.ts') ?? '',
     /id: 'sample-app-preferences'/,

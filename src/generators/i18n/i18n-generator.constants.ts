@@ -10,7 +10,6 @@ export const I18N_RELATIVE_FILES = [
   'i18n/index.ts',
   'stores/mmkvStorage.ts',
   'stores/languageStore.ts',
-  'stores/languageStore.types.ts',
 ] as const;
 
 export const I18N_GENERATED_FILES = I18N_RELATIVE_FILES.map((file) => `src/${file}`);

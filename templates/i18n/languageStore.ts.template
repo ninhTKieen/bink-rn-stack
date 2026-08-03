@@ -2,8 +2,13 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
 import { getDeviceLanguage, i18n } from '../i18n';
-import type { LanguageState } from './languageStore.types';
+import type { SupportedLanguage } from '../i18n/types';
 import { mmkvStorage } from './mmkvStorage';
+
+export interface LanguageState {
+  language: SupportedLanguage;
+  setLanguage: (language: SupportedLanguage) => void;
+}
 
 export const useLanguageStore = create<LanguageState>()(
   persist(

@@ -3,7 +3,11 @@ import { create } from 'zustand';
 
 import type { ThemePreference } from '../theme/types';
 import { getStoredThemePreference, persistThemePreference } from './themePreference';
-import type { ThemeState } from './themeStore.types';
+
+export interface ThemeState {
+  themePreference: ThemePreference;
+  setThemePreference: (preference: ThemePreference) => void;
+}
 
 function applyThemePreference(preference: ThemePreference): void {
   if (preference === 'system') {

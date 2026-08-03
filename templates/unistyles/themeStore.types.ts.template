@@ -1,6 +1,0 @@
-import type { ThemePreference } from '../theme/types';
-
-export interface ThemeState {
-  themePreference: ThemePreference;
-  setThemePreference: (preference: ThemePreference) => void;
-}

@@ -27,7 +27,6 @@ export function createI18nFileRecipes(options: I18nGeneratorOptions): I18nFileRe
     'i18n/index.ts.template',
     'shared/mmkvStorage.ts.template',
     'i18n/languageStore.ts.template',
-    'i18n/languageStore.types.ts.template',
   ] as const;
 
   return I18N_RELATIVE_FILES.map((relativePath, index) => {

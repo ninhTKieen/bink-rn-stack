@@ -26,7 +26,6 @@ export function createUnistylesFileRecipes(
     'shared/mmkvStorage.ts.template',
     'unistyles/themePreference.ts.template',
     'unistyles/themeStore.ts.template',
-    'unistyles/themeStore.types.ts.template',
   ] as const;
 
   return UNISTYLES_RELATIVE_FILES.map((relativePath, index) => {

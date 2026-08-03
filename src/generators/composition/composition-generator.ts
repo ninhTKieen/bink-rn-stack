@@ -11,7 +11,11 @@ const STATE_MODULES: readonly StackModuleName[] = ['unistyles', 'zustand', 'i18n
 function renderAppProviders(): string {
   return [
     "import { QueryProvider } from './QueryProvider';",
-    "import type { AppProvidersProps } from './AppProviders.types';",
+    "import type { ReactNode } from 'react';",
+    '',
+    'export interface AppProvidersProps {',
+    '  children: ReactNode;',
+    '}',
     '',
     'export function AppProviders({ children }: AppProvidersProps) {',
     '  return <QueryProvider>{children}</QueryProvider>;',
@@ -20,21 +24,9 @@ function renderAppProviders(): string {
   ].join('\n');
 }
 
-function renderAppProvidersTypes(): string {
-  return [
-    "import type { ReactNode } from 'react';",
-    '',
-    'export interface AppProvidersProps {',
-    '  children: ReactNode;',
-    '}',
-    '',
-  ].join('\n');
-}
-
 function renderProvidersIndex(): string {
   return [
     "export { AppProviders } from './AppProviders';",
-    "export type { AppProvidersProps } from './AppProviders.types';",
     "export { QueryProvider } from './QueryProvider';",
     "export type { QueryProviderProps } from './QueryProvider.types';",
     '',
@@ -47,7 +39,7 @@ function renderStoresIndex(selectedModules: ReadonlySet<StackModuleName>): strin
   if (selectedModules.has('i18n')) {
     exports.push(
       "export { useLanguageStore } from './languageStore';",
-      "export type { LanguageState } from './languageStore.types';",
+      "export type { LanguageState } from './languageStore';",
     );
   }
 
@@ -55,7 +47,7 @@ function renderStoresIndex(selectedModules: ReadonlySet<StackModuleName>): strin
     exports.push(
       "export { getStoredThemePreference, persistThemePreference } from './themePreference';",
       "export { useThemeStore } from './themeStore';",
-      "export type { ThemeState } from './themeStore.types';",
+      "export type { ThemeState } from './themeStore';",
     );
   }
 
@@ -75,11 +67,6 @@ export function renderCompositionFoundation(
       {
         path: `${sourceRoot}/providers/AppProviders.tsx`,
         content: renderAppProviders(),
-        requestedBy,
-      },
-      {
-        path: `${sourceRoot}/providers/AppProviders.types.ts`,
-        content: renderAppProvidersTypes(),
         requestedBy,
       },
       {

@@ -1,6 +1,0 @@
-import type { SupportedLanguage } from '../i18n/types';
-
-export interface LanguageState {
-  language: SupportedLanguage;
-  setLanguage: (language: SupportedLanguage) => void;
-}

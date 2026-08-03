@@ -38,6 +38,11 @@ void test('renders the Expo i18n foundation with typed resources and MMKV persis
     contentsByPath.get('src/stores/languageStore.ts') ?? '',
     /createJSONStorage\(\(\) => mmkvStorage\)/,
   );
+  assert.match(
+    contentsByPath.get('src/stores/languageStore.ts') ?? '',
+    /export interface LanguageState/,
+  );
+  assert.ok(!contentsByPath.has('src/stores/languageStore.types.ts'));
   assert.deepEqual(JSON.parse(contentsByPath.get('src/i18n/locales/en.json') ?? ''), {
     common: {
       loading: 'Loading...',

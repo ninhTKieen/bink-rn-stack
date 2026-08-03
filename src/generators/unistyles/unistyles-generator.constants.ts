@@ -11,7 +11,6 @@ export const UNISTYLES_RELATIVE_FILES = [
   'stores/mmkvStorage.ts',
   'stores/themePreference.ts',
   'stores/themeStore.ts',
-  'stores/themeStore.types.ts',
 ] as const;
 
 export const UNISTYLES_GENERATED_FILES = UNISTYLES_RELATIVE_FILES.map((file) => `src/${file}`);
