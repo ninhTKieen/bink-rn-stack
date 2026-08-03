@@ -1,0 +1,27 @@
+import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
+
+import { getDeviceLanguage, i18n } from '../i18n';
+import type { LanguageState } from './languageStore.types';
+import { mmkvStorage } from './mmkvStorage';
+
+export const useLanguageStore = create<LanguageState>()(
+  persist(
+    (set) => ({
+      language: getDeviceLanguage(),
+      setLanguage: (language) => {
+        void i18n.changeLanguage(language);
+        set({ language });
+      },
+    }),
+    {
+      name: 'language-storage',
+      storage: createJSONStorage(() => mmkvStorage),
+      onRehydrateStorage: () => (state) => {
+        if (state !== undefined) {
+          void i18n.changeLanguage(state.language);
+        }
+      },
+    },
+  ),
+);

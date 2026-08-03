@@ -18,6 +18,12 @@ export type {
   PreviewFileStatus,
   SetupPreview,
 } from '@/core/setup-preview.types.js';
+export { createI18nFileRecipes, renderI18nFoundation } from '@/generators/i18n/i18n-generator.js';
+export type {
+  I18nFileRecipe,
+  I18nGeneratorOptions,
+  RenderedI18nFile,
+} from '@/generators/i18n/i18n-generator.types.js';
 export { STACK_MODULE_NAMES, STACK_MODULES } from '@/modules/stack-module.js';
 export type {
   ModuleSelectionMode,

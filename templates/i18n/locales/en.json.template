@@ -1,0 +1,9 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Something went wrong"
+  },
+  "language": {
+    "english": "English"
+  }
+}

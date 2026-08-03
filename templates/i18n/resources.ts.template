@@ -1,0 +1,18 @@
+import en from './locales/en.json';
+import type { SupportedLanguage } from './types';
+
+export const DEFAULT_LANGUAGE = 'en' as const;
+
+export const resources = {
+  en: {
+    translation: en,
+  },
+} as const;
+
+export const SUPPORTED_LANGUAGES = Object.keys(resources) as SupportedLanguage[];
+
+export function isSupportedLanguage(
+  language: string | null | undefined,
+): language is SupportedLanguage {
+  return language !== null && language !== undefined && language in resources;
+}

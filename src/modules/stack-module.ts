@@ -1,4 +1,5 @@
 import type { StackModuleDefinition, StackModuleName } from '@/modules/stack-module.types.js';
+import { I18N_GENERATED_FILES } from '@/generators/i18n/i18n-generator.constants.js';
 
 export const STACK_MODULES = [
   {
@@ -73,20 +74,8 @@ export const STACK_MODULES = [
     ],
     expoDependencies: ['expo-localization'],
     reactNativeDependencies: ['react-native-localize'],
-    files: [
-      'src/i18n/config.ts',
-      'src/i18n/resources.ts',
-      'src/i18n/locales/en.json',
-      'src/i18n/index.ts',
-      'src/stores/languageStore.ts',
-      'src/stores/index.ts',
-      'src/providers/AppProviders.tsx',
-      'src/providers/index.ts',
-    ],
-    integrationSteps: [
-      'Import src/i18n/config.ts before the application renders.',
-      'Wrap the application root with AppProviders.',
-    ],
+    files: I18N_GENERATED_FILES,
+    integrationSteps: ['Import src/i18n/config.ts before the application renders.'],
     requiresNativeRebuild: true,
   },
 ] as const satisfies readonly StackModuleDefinition[];

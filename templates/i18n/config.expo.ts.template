@@ -1,0 +1,38 @@
+import { getLocales } from 'expo-localization';
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
+
+import { DEFAULT_LANGUAGE, isSupportedLanguage, resources, SUPPORTED_LANGUAGES } from './resources';
+import type { SupportedLanguage } from './types';
+
+export function getDeviceLanguage(): SupportedLanguage {
+  const locale = getLocales()[0];
+
+  if (isSupportedLanguage(locale?.languageTag)) {
+    return locale.languageTag;
+  }
+
+  if (isSupportedLanguage(locale?.languageCode)) {
+    return locale.languageCode;
+  }
+
+  return DEFAULT_LANGUAGE;
+}
+
+export const i18nInitialization = i18n.use(initReactI18next).init({
+  resources,
+  lng: getDeviceLanguage(),
+  fallbackLng: DEFAULT_LANGUAGE,
+  supportedLngs: SUPPORTED_LANGUAGES,
+  load: 'languageOnly',
+  initAsync: false,
+  returnNull: false,
+  interpolation: {
+    escapeValue: false,
+  },
+  react: {
+    useSuspense: false,
+  },
+});
+
+export { i18n };
