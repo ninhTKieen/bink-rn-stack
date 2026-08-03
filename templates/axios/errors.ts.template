@@ -1,0 +1,43 @@
+import axios from 'axios';
+
+import type { ApiErrorDetails } from './types';
+
+export class ApiError extends Error {
+  readonly status: number | undefined;
+  readonly code: string | undefined;
+  readonly data: unknown;
+
+  constructor(message: string, details: ApiErrorDetails = {}) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = details.status;
+    this.code = details.code;
+    this.data = details.data;
+  }
+}
+
+export function toApiError(error: unknown): ApiError {
+  if (error instanceof ApiError) {
+    return error;
+  }
+
+  if (axios.isAxiosError(error)) {
+    const details: ApiErrorDetails = {
+      data: error.response?.data,
+    };
+
+    if (error.response?.status !== undefined) {
+      details.status = error.response.status;
+    }
+
+    if (error.code !== undefined) {
+      details.code = error.code;
+    }
+
+    return new ApiError(error.message, details);
+  }
+
+  return new ApiError(error instanceof Error ? error.message : 'An unexpected error occurred', {
+    data: error,
+  });
+}

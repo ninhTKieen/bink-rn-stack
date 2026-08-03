@@ -1,5 +1,7 @@
 import type { StackModuleDefinition, StackModuleName } from '@/modules/stack-module.types.js';
+import { AXIOS_GENERATED_FILES } from '@/generators/axios/axios-generator.constants.js';
 import { I18N_GENERATED_FILES } from '@/generators/i18n/i18n-generator.constants.js';
+import { TANSTACK_QUERY_GENERATED_FILES } from '@/generators/tanstack-query/tanstack-query-generator.constants.js';
 import { UNISTYLES_GENERATED_FILES } from '@/generators/unistyles/unistyles-generator.constants.js';
 
 export const STACK_MODULES = [
@@ -8,7 +10,7 @@ export const STACK_MODULES = [
     label: 'Axios',
     description: 'HTTP client and base API configuration',
     dependencies: ['axios'],
-    files: ['src/api/client.ts', 'src/api/index.ts'],
+    files: AXIOS_GENERATED_FILES,
     integrationSteps: [],
   },
   {
@@ -45,12 +47,8 @@ export const STACK_MODULES = [
     label: 'TanStack Query',
     description: 'Server-state fetching, caching, and synchronization',
     dependencies: ['@tanstack/react-query'],
-    files: [
-      'src/providers/QueryProvider.tsx',
-      'src/providers/AppProviders.tsx',
-      'src/providers/index.ts',
-    ],
-    integrationSteps: ['Wrap the application root with AppProviders.'],
+    files: TANSTACK_QUERY_GENERATED_FILES,
+    integrationSteps: ['Wrap the application root with QueryProvider.'],
   },
   {
     name: 'i18n',

@@ -1,0 +1,5 @@
+export interface ApiErrorDetails {
+  status?: number;
+  code?: string;
+  data?: unknown;
+}

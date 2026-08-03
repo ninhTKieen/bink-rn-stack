@@ -1,0 +1,29 @@
+import { focusManager, QueryClientProvider } from '@tanstack/react-query';
+import { useEffect } from 'react';
+import { AppState, Platform } from 'react-native';
+import type { AppStateStatus } from 'react-native';
+
+import { queryClient } from '../query';
+import type { QueryProviderProps } from './QueryProvider.types';
+
+function onAppStateChange(status: AppStateStatus): void {
+  focusManager.setFocused(status === 'active');
+}
+
+export function QueryProvider({ children }: QueryProviderProps) {
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      return undefined;
+    }
+
+    focusManager.setFocused(AppState.currentState === 'active');
+    const subscription = AppState.addEventListener('change', onAppStateChange);
+
+    return () => {
+      subscription.remove();
+      focusManager.setFocused(undefined);
+    };
+  }, []);
+
+  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+}

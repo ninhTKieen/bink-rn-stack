@@ -25,6 +25,15 @@ export type {
   RenderedI18nFile,
 } from '@/generators/i18n/i18n-generator.types.js';
 export {
+  createTanstackQueryFileRecipes,
+  renderTanstackQueryFoundation,
+} from '@/generators/tanstack-query/tanstack-query-generator.js';
+export type {
+  RenderedTanstackQueryFile,
+  TanstackQueryFileRecipe,
+  TanstackQueryGeneratorOptions,
+} from '@/generators/tanstack-query/tanstack-query-generator.types.js';
+export {
   createUnistylesFileRecipes,
   renderUnistylesFoundation,
 } from '@/generators/unistyles/unistyles-generator.js';
@@ -39,3 +48,12 @@ export type {
   StackModuleDefinition,
   StackModuleName,
 } from '@/modules/stack-module.types.js';
+export {
+  createAxiosFileRecipes,
+  renderAxiosFoundation,
+} from '@/generators/axios/axios-generator.js';
+export type {
+  AxiosFileRecipe,
+  AxiosGeneratorOptions,
+  RenderedAxiosFile,
+} from '@/generators/axios/axios-generator.types.js';
