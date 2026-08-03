@@ -1,67 +1,229 @@
+<div align="center">
+
 # bink-rn-stack
 
-An opinionated setup CLI for React Native and Expo applications.
+Set up an opinionated foundation for an existing React Native or Expo application.
 
-## Current milestone
+Choose the tools you want. Preview every change. Generate a consistent project structure in one command.
 
-The CLI detects Expo and bare React Native projects, detects their package manager, previews the setup, installs missing dependencies, and writes the selected foundations after confirmation.
+</div>
 
-```bash
-yarn build
-node dist/cli.js init /path/to/your-app
+## What it does
+
+`bink-rn-stack` inspects an existing application and guides it through a predictable setup flow:
+
+```mermaid
+flowchart LR
+    A[Detect project] --> B[Detect package manager]
+    B --> C[Select modules]
+    C --> D[Preview changes]
+    D --> E[Confirm]
+    E --> F[Install dependencies]
+    F --> G[Generate foundations]
+    G --> H[Print integration steps]
 ```
 
-For local development:
+- Detects Expo and bare React Native projects.
+- Detects npm, Yarn, pnpm, or Bun.
+- Offers an interactive module selector or non-interactive flags.
+- Shows dependencies, generated files, conflicts, and native steps before changing anything.
+- Installs only missing dependencies.
+- Composes shared providers, stores, and barrel exports without duplicate files.
+- Protects existing files unless an overwrite is explicitly requested.
+
+## Supported modules
+
+| Module             | Foundation                                                                               | Native rebuild |
+| ------------------ | ---------------------------------------------------------------------------------------- | :------------: |
+| **Axios**          | Configured client, API configuration, typed errors, and shared exports                   |       No       |
+| **Unistyles**      | Themes, breakpoints, type augmentation, runtime configuration, and persisted theme state |      Yes       |
+| **Zustand**        | State management foundation with an MMKV persistence adapter                             |      Yes       |
+| **TanStack Query** | Query client, React Native lifecycle handling, and provider composition                  |       No       |
+| **i18n**           | Typed resources, device-language detection, MMKV persistence, and language state         |      Yes       |
+
+When multiple modules need the same foundation, such as MMKV storage, the generated output is shared instead of duplicated.
+
+## Requirements
+
+- Node.js 20 or newer.
+- An existing Expo or bare React Native application.
+- npm, Yarn, pnpm, or Bun configured through `packageManager` or a lockfile.
+
+## Quick start
+
+Run the CLI directly from npm—no cloning or global installation required:
 
 ```bash
-yarn dev init /path/to/your-app
+npx bink-rn-stack init /path/to/your-app
 ```
 
-The interactive flow offers either the complete stack or a checkbox list for Axios, Unistyles, Zustand, TanStack Query, and i18n. For non-interactive use, pass all modules or a comma-separated selection:
+The interactive flow asks whether to install the complete stack or select individual modules. After selection, it prints the full setup preview and asks for confirmation.
+
+## Usage
+
+### Interactive setup
 
 ```bash
-yarn dev init /path/to/your-app --modules all
-yarn dev init /path/to/your-app --modules axios,zustand,tanstack-query
+npx bink-rn-stack init ../my-app
 ```
 
-Preview the complete plan without making changes:
+### Install the complete stack
 
 ```bash
-yarn dev init /path/to/your-app --modules all --dry-run
+npx bink-rn-stack init ../my-app --modules all
 ```
 
-Skip the confirmation prompt in scripts or CI:
+### Install selected modules
 
 ```bash
-yarn dev init /path/to/your-app --modules all --yes
+npx bink-rn-stack init ../my-app --modules axios,zustand,tanstack-query
 ```
 
-Existing files with different content block setup. Review the preview first, then use
-`--force` only when you intentionally want the generated version to replace them.
-
-The preview reports dependencies to install or skip, generated-file paths, unchanged files and conflicts, the package-manager command, app integration work, and native rebuild steps. Shared outputs such as MMKV storage are deduplicated, and provider/store barrel files are composed from the selected modules.
-
-Machine-readable output is available with `--json`:
+### Preview without making changes
 
 ```bash
-yarn dev init /path/to/your-app --json
+npx bink-rn-stack init ../my-app --modules all --dry-run
 ```
 
-Detection gives Expo precedence because Expo projects normally declare both `expo` and `react-native`. It also recognizes the `expo` object in `app.json` and conventional `app.config.*` files.
-
-The same command detects npm, Yarn, pnpm, or Bun from the `packageManager` field or the app's lockfile. If different package-manager lockfiles conflict, the result is reported as ambiguous instead of selecting one silently.
-
-## Development checks
+### Run non-interactively
 
 ```bash
-yarn format
-yarn lint
-yarn typecheck
-yarn test
-yarn build
+npx bink-rn-stack init ../my-app --modules all --yes
 ```
 
-Run the full validation pipeline with `yarn validate`.
+### Inspect project detection as JSON
+
+```bash
+npx bink-rn-stack init ../my-app --json
+```
+
+## Command options
+
+```text
+npx bink-rn-stack init [path] [options]
+```
+
+| Option                    | Description                                                          |
+| ------------------------- | -------------------------------------------------------------------- |
+| `-m, --modules <modules>` | Select `all` or a comma-separated module list                        |
+| `--dry-run`               | Print the complete preview without installing or generating anything |
+| `-y, --yes`               | Apply the preview without asking for confirmation                    |
+| `--force`                 | Replace existing generated paths whose contents differ               |
+| `--json`                  | Print only the project-detection result as JSON                      |
+| `-h, --help`              | Show command help                                                    |
+
+Available module names are `axios`, `unistyles`, `zustand`, `tanstack-query`, and `i18n`.
+
+## Generated structure
+
+Selecting every module produces this foundation:
+
+```text
+src/
+├── api/
+│   ├── client.ts
+│   ├── config.ts
+│   ├── errors.ts
+│   ├── index.ts
+│   └── types.ts
+├── i18n/
+│   ├── locales/
+│   │   └── en.json
+│   ├── config.ts
+│   ├── i18next.d.ts
+│   ├── index.ts
+│   ├── resources.ts
+│   └── types.ts
+├── providers/
+│   ├── AppProviders.tsx
+│   ├── index.ts
+│   ├── QueryProvider.tsx
+│   └── QueryProvider.types.ts
+├── query/
+│   ├── index.ts
+│   └── queryClient.ts
+├── stores/
+│   ├── index.ts
+│   ├── languageStore.ts
+│   ├── mmkvStorage.ts
+│   ├── themePreference.ts
+│   └── themeStore.ts
+└── theme/
+    ├── breakpoints.ts
+    ├── index.ts
+    ├── themes.ts
+    ├── types.ts
+    ├── unistyles.d.ts
+    └── unistyles.ts
+```
+
+The exact tree depends on the selected modules. Shared barrel files are composed from the final selection.
+
+## Preview and safety
+
+Every normal run displays a preview before applying the setup. The preview includes:
+
+- Detected project type, root, and package manager.
+- Selected modules.
+- Dependencies that will be installed or skipped.
+- The exact package-manager command.
+- Files that will be created, left unchanged, or treated as conflicts.
+- Required application integration and native rebuild steps.
+
+Generated files follow these rules:
+
+- A missing path is created.
+- A file with identical content is left unchanged.
+- A file with different content blocks setup before dependency installation.
+- `--force` explicitly permits conflicting generated paths to be replaced.
+- If dependency installation fails, source generation does not start.
+
+Successful runs also create `.bink-rn-stack.json`. It records the CLI version, selected modules, generated paths, and content hashes. This metadata is intended to support safe update and removal commands in the future.
+
+> [!CAUTION]
+> `--force` replaces the complete contents of conflicting generated files. Always review the preview or commit your application changes first.
+
+## Application integration
+
+The CLI currently generates foundations but does not automatically rewrite the application entry point or Babel configuration. Follow the integration steps printed in the preview for the selected modules.
+
+Depending on the selection, this can include:
+
+- Importing `src/theme/unistyles.ts` before any `StyleSheet.create` call.
+- Adding the Unistyles Babel plugin.
+- Wrapping the application root with `AppProviders`.
+- Importing `src/i18n/config.ts` before rendering the application.
+- Creating a new Expo development build or rebuilding the native application.
+- Running CocoaPods for a bare React Native iOS application.
+
+## Project detection
+
+Expo detection takes precedence because Expo applications normally depend on both `expo` and `react-native`. The CLI can recognize Expo from its dependency, the `expo` object in `app.json`, or conventional `app.config.*` files.
+
+Package-manager detection checks the `packageManager` field first and then known lockfiles:
+
+| Package manager | Recognized lockfiles                       |
+| --------------- | ------------------------------------------ |
+| npm             | `package-lock.json`, `npm-shrinkwrap.json` |
+| Yarn            | `yarn.lock`                                |
+| pnpm            | `pnpm-lock.yaml`                           |
+| Bun             | `bun.lock`, `bun.lockb`                    |
+
+Conflicting lockfiles are reported instead of silently choosing a package manager.
+
+## Development
+
+The following commands are for contributors working inside this repository:
+
+| Command          | Purpose                                                  |
+| ---------------- | -------------------------------------------------------- |
+| `yarn dev`       | Run the CLI directly from TypeScript                     |
+| `yarn format`    | Format the repository with Prettier                      |
+| `yarn lint`      | Run ESLint                                               |
+| `yarn typecheck` | Type-check the CLI and tests                             |
+| `yarn test`      | Run the automated test suite                             |
+| `yarn build`     | Compile the distributable CLI                            |
+| `yarn validate`  | Run formatting, linting, type-checking, tests, and build |
 
 Internal source imports use the `@/` alias for the `src` directory:
 
@@ -69,4 +231,13 @@ Internal source imports use the `@/` alias for the `src` directory:
 import { detectProject } from '@/core/detect-project.js';
 ```
 
-The build rewrites these aliases to Node-compatible relative paths in `dist`.
+The build rewrites internal aliases to Node-compatible relative imports in `dist`.
+
+## Roadmap
+
+- Compatibility-aware dependency resolution for each Expo SDK and React Native version.
+- Automatic entry-point, provider, Babel, and Expo configuration integration.
+- `doctor` and CI-friendly `check` commands.
+- Transactional rollback when a setup step fails.
+- Safe `add`, `update`, and `remove` workflows.
+- User-defined presets, languages, theme tokens, and generator options.
