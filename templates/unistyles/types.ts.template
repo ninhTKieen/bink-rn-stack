@@ -1,0 +1,30 @@
+export interface AppTheme {
+  colors: {
+    background: string;
+    surface: string;
+    surfaceElevated: string;
+    text: string;
+    textMuted: string;
+    primary: string;
+    onPrimary: string;
+    border: string;
+    error: string;
+    success: string;
+  };
+  spacing: {
+    xs: number;
+    sm: number;
+    md: number;
+    lg: number;
+    xl: number;
+  };
+  radii: {
+    sm: number;
+    md: number;
+    lg: number;
+    full: number;
+  };
+}
+
+export type ThemeName = 'light' | 'dark';
+export type ThemePreference = ThemeName | 'system';

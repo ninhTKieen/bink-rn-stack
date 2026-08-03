@@ -1,5 +1,4 @@
-import path from 'node:path';
-
+import { normalizeSourceRoot } from '@/generators/generator-path.js';
 import {
   DEFAULT_I18N_SOURCE_ROOT,
   DEFAULT_I18N_STORAGE_ID,
@@ -11,20 +10,6 @@ import type {
   RenderedI18nFile,
 } from '@/generators/i18n/i18n-generator.types.js';
 import { renderGeneratorFiles } from '@/generators/template-renderer.js';
-
-function normalizeSourceRoot(sourceRoot: string): string {
-  const normalized = sourceRoot.replaceAll('\\', '/').replace(/^\.\//, '').replace(/\/$/, '');
-
-  if (
-    normalized.length === 0 ||
-    path.isAbsolute(normalized) ||
-    normalized.split('/').includes('..')
-  ) {
-    throw new Error(`Source root must be a relative project path: ${sourceRoot}`);
-  }
-
-  return normalized;
-}
 
 export function createI18nFileRecipes(options: I18nGeneratorOptions): I18nFileRecipe[] {
   const sourceRoot = normalizeSourceRoot(options.sourceRoot ?? DEFAULT_I18N_SOURCE_ROOT);
@@ -40,7 +25,7 @@ export function createI18nFileRecipes(options: I18nGeneratorOptions): I18nFileRe
     'i18n/i18next.d.ts.template',
     'i18n/locales/en.json.template',
     'i18n/index.ts.template',
-    'i18n/mmkvStorage.ts.template',
+    'shared/mmkvStorage.ts.template',
     'i18n/languageStore.ts.template',
     'i18n/languageStore.types.ts.template',
   ] as const;
@@ -55,7 +40,7 @@ export function createI18nFileRecipes(options: I18nGeneratorOptions): I18nFileRe
     return {
       destination: `${sourceRoot}/${relativePath}`,
       template,
-      ...(template === 'i18n/mmkvStorage.ts.template' ? { variables: { storageId } } : {}),
+      ...(template === 'shared/mmkvStorage.ts.template' ? { variables: { storageId } } : {}),
     };
   });
 }

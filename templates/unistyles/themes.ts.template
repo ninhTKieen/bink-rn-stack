@@ -1,0 +1,55 @@
+import type { AppTheme } from './types';
+
+const spacing = {
+  xs: 4,
+  sm: 8,
+  md: 16,
+  lg: 24,
+  xl: 32,
+} as const;
+
+const radii = {
+  sm: 6,
+  md: 10,
+  lg: 16,
+  full: 999,
+} as const;
+
+export const lightTheme = {
+  colors: {
+    background: '#FFFFFF',
+    surface: '#F8FAFC',
+    surfaceElevated: '#FFFFFF',
+    text: '#0F172A',
+    textMuted: '#64748B',
+    primary: '#2563EB',
+    onPrimary: '#FFFFFF',
+    border: '#E2E8F0',
+    error: '#DC2626',
+    success: '#16A34A',
+  },
+  spacing,
+  radii,
+} as const satisfies AppTheme;
+
+export const darkTheme = {
+  colors: {
+    background: '#020617',
+    surface: '#0F172A',
+    surfaceElevated: '#1E293B',
+    text: '#F8FAFC',
+    textMuted: '#94A3B8',
+    primary: '#60A5FA',
+    onPrimary: '#0F172A',
+    border: '#334155',
+    error: '#F87171',
+    success: '#4ADE80',
+  },
+  spacing,
+  radii,
+} as const satisfies AppTheme;
+
+export const appThemes = {
+  light: lightTheme,
+  dark: darkTheme,
+} as const;

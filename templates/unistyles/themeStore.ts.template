@@ -1,0 +1,25 @@
+import { UnistylesRuntime } from 'react-native-unistyles';
+import { create } from 'zustand';
+
+import type { ThemePreference } from '../theme/types';
+import { getStoredThemePreference, persistThemePreference } from './themePreference';
+import type { ThemeState } from './themeStore.types';
+
+function applyThemePreference(preference: ThemePreference): void {
+  if (preference === 'system') {
+    UnistylesRuntime.setAdaptiveThemes(true);
+    return;
+  }
+
+  UnistylesRuntime.setAdaptiveThemes(false);
+  UnistylesRuntime.setTheme(preference);
+}
+
+export const useThemeStore = create<ThemeState>((set) => ({
+  themePreference: getStoredThemePreference(),
+  setThemePreference: (themePreference) => {
+    persistThemePreference(themePreference);
+    applyThemePreference(themePreference);
+    set({ themePreference });
+  },
+}));

@@ -1,0 +1,20 @@
+import { StyleSheet } from 'react-native-unistyles';
+
+import { getStoredThemePreference } from '../stores/themePreference';
+import { breakpoints } from './breakpoints';
+import { appThemes } from './themes';
+
+const themePreference = getStoredThemePreference();
+
+StyleSheet.configure({
+  themes: appThemes,
+  breakpoints,
+  settings:
+    themePreference === 'system'
+      ? {
+          adaptiveThemes: true,
+        }
+      : {
+          initialTheme: themePreference,
+        },
+});

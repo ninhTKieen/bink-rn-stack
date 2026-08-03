@@ -24,6 +24,15 @@ export type {
   I18nGeneratorOptions,
   RenderedI18nFile,
 } from '@/generators/i18n/i18n-generator.types.js';
+export {
+  createUnistylesFileRecipes,
+  renderUnistylesFoundation,
+} from '@/generators/unistyles/unistyles-generator.js';
+export type {
+  RenderedUnistylesFile,
+  UnistylesFileRecipe,
+  UnistylesGeneratorOptions,
+} from '@/generators/unistyles/unistyles-generator.types.js';
 export { STACK_MODULE_NAMES, STACK_MODULES } from '@/modules/stack-module.js';
 export type {
   ModuleSelectionMode,

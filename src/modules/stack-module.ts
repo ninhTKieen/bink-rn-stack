@@ -1,5 +1,6 @@
 import type { StackModuleDefinition, StackModuleName } from '@/modules/stack-module.types.js';
 import { I18N_GENERATED_FILES } from '@/generators/i18n/i18n-generator.constants.js';
+import { UNISTYLES_GENERATED_FILES } from '@/generators/unistyles/unistyles-generator.constants.js';
 
 export const STACK_MODULES = [
   {
@@ -17,26 +18,16 @@ export const STACK_MODULES = [
     dependencies: [
       'react-native-unistyles',
       'react-native-nitro-modules',
-      'react-native-edge-to-edge',
-      'react-native-reanimated',
       '@react-native/normalize-colors',
       'zustand',
       'react-native-mmkv',
     ],
-    files: [
-      'src/theme/unistyles.ts',
-      'src/theme/themes.ts',
-      'src/theme/types.ts',
-      'src/theme/index.ts',
-      'src/stores/themeStore.ts',
-      'src/stores/index.ts',
-      'src/providers/AppProviders.tsx',
-      'src/providers/index.ts',
-    ],
+    files: UNISTYLES_GENERATED_FILES,
     integrationSteps: [
-      'Import src/theme/unistyles.ts before the application renders.',
-      'Wrap the application root with AppProviders.',
-      'Apply the required Unistyles Babel configuration.',
+      'Verify React Native 0.78+ or Expo SDK 53+ with the New Architecture enabled.',
+      'Import src/theme/unistyles.ts before any StyleSheet.create call.',
+      "Add ['react-native-unistyles/plugin', { root: 'src' }] to babel.config.js.",
+      'Enable edgeToEdgeEnabled=true when it is not already provided by Expo SDK 54+.',
     ],
     requiresNativeRebuild: true,
   },

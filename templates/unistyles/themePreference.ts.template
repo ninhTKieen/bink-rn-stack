@@ -1,0 +1,18 @@
+import type { ThemePreference } from '../theme/types';
+import { appStorage } from './mmkvStorage';
+
+const THEME_PREFERENCE_KEY = 'theme-preference';
+const THEME_PREFERENCES: readonly ThemePreference[] = ['system', 'light', 'dark'];
+
+export function isThemePreference(value: string | undefined): value is ThemePreference {
+  return value !== undefined && THEME_PREFERENCES.includes(value as ThemePreference);
+}
+
+export function getStoredThemePreference(): ThemePreference {
+  const storedPreference = appStorage.getString(THEME_PREFERENCE_KEY);
+  return isThemePreference(storedPreference) ? storedPreference : 'system';
+}
+
+export function persistThemePreference(preference: ThemePreference): void {
+  appStorage.set(THEME_PREFERENCE_KEY, preference);
+}
