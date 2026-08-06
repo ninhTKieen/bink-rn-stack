@@ -4,7 +4,7 @@
 
 Set up an opinionated foundation for an existing React Native or Expo application.
 
-Choose the tools you want. Preview every change. Generate a consistent project structure in one command.
+Choose the tools you want, preview every change, and decide whether the CLI should integrate them for you.
 
 </div>
 
@@ -16,11 +16,13 @@ Choose the tools you want. Preview every change. Generate a consistent project s
 flowchart LR
     A[Detect project] --> B[Detect package manager]
     B --> C[Select modules]
-    C --> D[Preview changes]
-    D --> E[Confirm]
-    E --> F[Install dependencies]
-    F --> G[Generate foundations]
-    G --> H[Print integration steps]
+    C --> D[Choose app integration]
+    D --> E[Preview changes]
+    E --> F[Confirm]
+    F --> G[Install dependencies]
+    G --> H[Generate foundations]
+    H --> I[Integrate application if selected]
+    I --> J[Print remaining native or manual steps]
 ```
 
 - Detects Expo and bare React Native projects.
@@ -30,6 +32,7 @@ flowchart LR
 - Shows dependencies, generated files, conflicts, and native steps before changing anything.
 - Installs only missing dependencies.
 - Composes shared providers, stores, and barrel exports without duplicate files.
+- Optionally integrates providers, initialization imports, navigation, Babel, and Expo configuration when the target files use a supported structure.
 - Protects existing files unless an overwrite is explicitly requested.
 
 ## Supported modules
@@ -60,7 +63,7 @@ Run the CLI directly from npm—no cloning or global installation required:
 npx bink-rn-stack init /path/to/your-app
 ```
 
-The interactive flow asks whether to install the complete stack or select individual modules. When Navigation is selected, the CLI first detects any existing setup. Existing navigation can be preserved; otherwise bare React Native uses React Navigation automatically, while Expo asks you to choose React Navigation or Expo Router. The CLI then prints the full setup preview and asks for confirmation.
+The interactive flow walks through module selection, navigation, and app integration. It then prints the complete setup preview before asking for confirmation. No dependency or source file is changed before that confirmation.
 
 ## Usage
 
@@ -101,11 +104,19 @@ npx bink-rn-stack init ../my-app --modules navigation,axios,react-hook-form,tans
 npx bink-rn-stack init ../my-app --modules all --dry-run
 ```
 
-### Run non-interactively
+### Run non-interactively with manual integration
 
 ```bash
 npx bink-rn-stack init ../my-app --modules all --navigation expo-router --yes
 ```
+
+### Run non-interactively with automatic integration
+
+```bash
+npx bink-rn-stack init ../my-app --modules all --navigation expo-router --integrate --yes
+```
+
+Non-interactive runs use manual integration when neither `--integrate` nor `--no-integrate` is passed.
 
 ### Inspect project detection as JSON
 
@@ -123,6 +134,8 @@ npx bink-rn-stack init [path] [options]
 | ------------------------- | -------------------------------------------------------------------- |
 | `-m, --modules <modules>` | Select `all` or a comma-separated module list                        |
 | `--navigation <library>`  | Select `keep`, `react-navigation`, or `expo-router`                  |
+| `--integrate`             | Automatically update supported application and configuration files   |
+| `--no-integrate`          | Generate foundations and print manual integration steps              |
 | `--dry-run`               | Print the complete preview without installing or generating anything |
 | `-y, --yes`               | Apply the preview without asking for confirmation                    |
 | `--force`                 | Replace existing generated paths whose contents differ               |
@@ -130,6 +143,41 @@ npx bink-rn-stack init [path] [options]
 | `-h, --help`              | Show command help                                                    |
 
 Available module names are `navigation`, `axios`, `unistyles`, `zustand`, `react-hook-form`, `tanstack-query`, and `i18n`.
+
+## App integration modes
+
+When Navigation, Unistyles, TanStack Query, or i18n is selected, interactive runs ask how application integration should be handled:
+
+| Mode          | CLI flag         | Behavior                                                               |
+| ------------- | ---------------- | ---------------------------------------------------------------------- |
+| **Automatic** | `--integrate`    | Preview and apply supported changes to existing app and config files   |
+| **Manual**    | `--no-integrate` | Leave existing app and config files untouched and print required steps |
+
+Modules that do not require application-level changes—Axios, Zustand, and React Hook Form—skip this question.
+
+Automatic mode is still preview-first:
+
+```text
+App integration: Automatic
+
+Automatic app integration
+  ~ src/app/_layout.tsx
+    - Wrap the root with AppProviders
+    - Import the i18n configuration
+    - Import the Unistyles configuration
+  + babel.config.js
+    - Create Babel configuration with the Unistyles plugin
+```
+
+Manual mode shows the work left for the developer:
+
+```text
+App integration: Manual
+
+Manual app integration
+  - Wrap the application root with AppProviders.
+  - Import src/i18n/config.ts before the application renders.
+```
 
 ## Generated structure
 
@@ -143,6 +191,12 @@ src/
 │   ├── errors.ts
 │   ├── index.ts
 │   └── types.ts
+├── forms/
+│   ├── fields/
+│   │   └── FormTextInput.tsx
+│   ├── login/
+│   │   └── loginForm.ts
+│   └── index.ts
 ├── i18n/
 │   ├── locales/
 │   │   └── en.json
@@ -151,12 +205,6 @@ src/
 │   ├── index.ts
 │   ├── resources.ts
 │   └── types.ts
-├── forms/
-│   ├── fields/
-│   │   └── FormTextInput.tsx
-│   ├── login/
-│   │   └── loginForm.ts
-│   └── index.ts
 ├── providers/
 │   ├── AppProviders.tsx
 │   ├── index.ts
@@ -188,7 +236,7 @@ The React Hook Form foundation includes a reusable controlled `TextInput` and an
 import { FormTextInput, useLoginForm } from './forms';
 
 export function LoginForm() {
-  const { control, handleSubmit } = useLoginForm();
+  const { control } = useLoginForm();
 
   return (
     <FormTextInput
@@ -235,7 +283,7 @@ When navigation already exists, the interactive choices become:
 - **Regenerate the detected library** — requires `--force`.
 - **Switch libraries** — requires `--force` and may require manual cleanup of old dependencies, routes, and entry configuration.
 
-Non-interactive runs preserve detected navigation by default. Use `--navigation keep` to make that intention explicit. The other selected foundations are still generated, and the preview prints the steps required to integrate them into the existing navigation root.
+Non-interactive runs preserve detected navigation by default. Use `--navigation keep` to make that intention explicit. Other selected foundations are still generated. Automatic mode can integrate them into a supported existing navigation root; manual mode prints the required steps.
 
 ## Preview and safety
 
@@ -244,9 +292,11 @@ Every normal run displays a preview before applying the setup. The preview inclu
 - Detected project type, root, and package manager.
 - Selected modules.
 - Selected navigation library when Navigation is included.
+- Automatic or manual application-integration mode.
 - Dependencies that will be installed or skipped.
 - The exact package-manager command.
 - Files that will be created, left unchanged, or treated as conflicts.
+- Existing application and configuration files that will be modified automatically.
 - Required application integration and native rebuild steps.
 
 Generated files follow these rules:
@@ -258,25 +308,35 @@ Generated files follow these rules:
 - Regenerating or switching detected navigation requires `--force`, even when generated paths do not directly conflict.
 - If dependency installation fails, source generation does not start.
 
-Successful runs also create `.bink-rn-stack.json`. It records the CLI version, selected modules, selected navigation library, generated paths, and content hashes. This metadata is intended to support safe update and removal commands in the future.
+Successful runs also create `.bink-rn-stack.json`. It records the CLI version, selected modules, selected navigation library, generated paths, automatically integrated paths, and content hashes. This metadata is intended to support safe update and removal commands in the future.
+
+Application files planned for automatic integration are protected separately. The CLI records their exact contents during preview, verifies them before dependency installation, and verifies them again before writing. If one changes during setup, the run stops and asks for a fresh preview.
 
 > [!CAUTION]
 > `--force` replaces the complete contents of conflicting generated files. Always review the preview or commit your application changes first.
 
-## Application integration
+## Automatic integration support
 
-The CLI currently generates foundations but does not automatically rewrite the application entry point or Babel configuration. Follow the integration steps printed in the preview for the selected modules.
+In automatic mode, application changes are planned alongside generated foundations and shown before confirmation.
 
-Depending on the selection, this can include:
+Supported automatic changes include:
 
-- Rendering `RootNavigator` from the bare React Native application entry point.
-- Setting `package.json#main` to `expo-router/entry` and updating the Expo app config.
-- Importing `src/theme/unistyles.ts` before any `StyleSheet.create` call.
-- Adding the Unistyles Babel plugin.
-- Wrapping the application root with `AppProviders`.
-- Importing `src/i18n/config.ts` before rendering the application.
+- Rendering the generated `RootNavigator` from a conventional root `App.tsx`, `App.jsx`, `App.ts`, or `App.js` component.
+- Wrapping a conventional application root or existing Expo Router root layout with `AppProviders`.
+- Adding i18n and Unistyles initialization imports without duplicating existing imports.
+- Setting `package.json#main` to `expo-router/entry`.
+- Adding the Expo Router plugin, application scheme, and typed-routes setting to `app.json`.
+- Updating standard object-returning `babel.config.js`, `.cjs`, `.mjs`, or `.ts` files.
+- Creating `babel.config.js` when Unistyles requires it and no Babel configuration exists.
+
+Source and Babel changes use syntax-tree transforms, while `package.json` and `app.json` use structured JSON updates. Repeated runs detect integrations that are already present and leave them unchanged.
+
+When the CLI cannot safely understand a dynamic or unconventional entry/configuration file, it preserves the file, prints a warning, and moves the corresponding work to **Manual app integration**. Remaining work can include:
+
 - Creating a new Expo development build or rebuilding the native application.
 - Running CocoaPods for a bare React Native iOS application.
+- Applying platform-specific React Navigation native configuration.
+- Updating dynamic `app.config.*` or non-standard Babel configuration code.
 
 ## Project detection
 
@@ -300,6 +360,7 @@ The following commands are for contributors working inside this repository:
 | Command          | Purpose                                                  |
 | ---------------- | -------------------------------------------------------- |
 | `yarn dev`       | Run the CLI directly from TypeScript                     |
+| `yarn clean`     | Remove generated build output                            |
 | `yarn format`    | Format the repository with Prettier                      |
 | `yarn lint`      | Run ESLint                                               |
 | `yarn typecheck` | Type-check the CLI and tests                             |
@@ -318,7 +379,6 @@ The build rewrites internal aliases to Node-compatible relative imports in `dist
 ## Roadmap
 
 - Compatibility-aware dependency resolution for each Expo SDK and React Native version.
-- Automatic entry-point, provider, Babel, and Expo configuration integration.
 - `doctor` and CI-friendly `check` commands.
 - Transactional rollback when a setup step fails.
 - Safe `add`, `update`, and `remove` workflows.
