@@ -1,4 +1,12 @@
 export { detectExistingNavigation } from '@/core/detect-navigation.js';
+export { doctorProject } from '@/core/doctor.js';
+export type {
+  DoctorCheck,
+  DoctorCheckStatus,
+  DoctorReport,
+  DoctorSummary,
+  TrackedFileAudit,
+} from '@/core/doctor.types.js';
 export type { ExistingNavigationDetection } from '@/core/detect-navigation.types.js';
 export { detectPackageManager } from '@/core/detect-package-manager.js';
 export type {
@@ -31,6 +39,7 @@ export type {
 } from '@/core/foundation-writer.types.js';
 export {
   GENERATION_MANIFEST_FILENAME,
+  parseGenerationManifest,
   writeGenerationManifest,
 } from '@/core/generation-manifest.js';
 export type { GenerationManifest } from '@/core/generation-manifest.types.js';

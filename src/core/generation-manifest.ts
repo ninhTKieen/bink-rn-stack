@@ -19,7 +19,7 @@ function isStackModuleName(value: unknown): value is StackModuleName {
   return typeof value === 'string' && STACK_MODULE_NAMES.some((name) => name === value);
 }
 
-function parseManifest(value: unknown): GenerationManifest | undefined {
+export function parseGenerationManifest(value: unknown): GenerationManifest | undefined {
   if (!isRecord(value) || !Array.isArray(value.modules) || !isRecord(value.files)) {
     return undefined;
   }
@@ -51,7 +51,7 @@ function parseManifest(value: unknown): GenerationManifest | undefined {
 
 async function readManifest(manifestPath: string): Promise<GenerationManifest | undefined> {
   try {
-    return parseManifest(JSON.parse(await readFile(manifestPath, 'utf8')));
+    return parseGenerationManifest(JSON.parse(await readFile(manifestPath, 'utf8')));
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
       return undefined;

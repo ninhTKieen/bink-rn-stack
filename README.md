@@ -33,6 +33,7 @@ flowchart LR
 - Installs only missing dependencies.
 - Composes shared providers, stores, and barrel exports without duplicate files.
 - Optionally integrates providers, initialization imports, navigation, Babel, and Expo configuration when the target files use a supported structure.
+- Audits installed dependencies, generated files, integrations, and navigation with a read-only doctor command.
 - Protects existing files unless an overwrite is explicitly requested.
 
 ## Supported modules
@@ -124,6 +125,12 @@ Non-interactive runs use manual integration when neither `--integrate` nor `--no
 npx bink-rn-stack init ../my-app --json
 ```
 
+### Check an initialized project
+
+```bash
+npx bink-rn-stack doctor ../my-app
+```
+
 ## Command options
 
 ```text
@@ -143,6 +150,44 @@ npx bink-rn-stack init [path] [options]
 | `-h, --help`              | Show command help                                                    |
 
 Available module names are `navigation`, `axios`, `unistyles`, `zustand`, `react-hook-form`, `tanstack-query`, and `i18n`.
+
+## Doctor
+
+`doctor` is a read-only health check for an application previously initialized by `bink-rn-stack`:
+
+```bash
+npx bink-rn-stack doctor /path/to/your-app
+```
+
+It checks:
+
+- Expo or bare React Native project detection.
+- Package-manager detection and conflicting lockfiles.
+- `.bink-rn-stack.json` structure and CLI version drift.
+- Dependencies required by the modules recorded in the manifest.
+- Missing or modified generated files.
+- Missing or modified automatically integrated files.
+- Whether the recorded navigation library is still detected.
+
+Missing dependencies, missing generated files, unsafe manifest paths, and invalid manifests are errors. File drift and CLI-version differences are warnings because they may be intentional.
+
+Warnings do not fail the normal command. Use strict mode in CI to make warnings fail too:
+
+```bash
+npx bink-rn-stack doctor ../my-app --strict
+```
+
+Use structured output for scripts:
+
+```bash
+npx bink-rn-stack doctor ../my-app --json
+```
+
+| Option       | Description                                        |
+| ------------ | -------------------------------------------------- |
+| `--json`     | Print the complete doctor report as JSON           |
+| `--strict`   | Return a failing exit code for warnings and errors |
+| `-h, --help` | Show command help                                  |
 
 ## App integration modes
 
@@ -379,7 +424,7 @@ The build rewrites internal aliases to Node-compatible relative imports in `dist
 ## Roadmap
 
 - Compatibility-aware dependency resolution for each Expo SDK and React Native version.
-- `doctor` and CI-friendly `check` commands.
+- CI-friendly `check` command.
 - Transactional rollback when a setup step fails.
 - Safe `add`, `update`, and `remove` workflows.
 - User-defined presets, languages, theme tokens, and generator options.

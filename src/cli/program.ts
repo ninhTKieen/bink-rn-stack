@@ -1,6 +1,7 @@
 import { Command } from 'commander';
 
 import { registerInitCommand } from '@/cli/commands/init.js';
+import { registerDoctorCommand } from '@/cli/commands/doctor.js';
 import { CLI_VERSION } from '@/configs/constants.js';
 
 export function createProgram(): Command {
@@ -13,6 +14,7 @@ export function createProgram(): Command {
     .showHelpAfterError();
 
   registerInitCommand(program);
+  registerDoctorCommand(program);
 
   return program;
 }
