@@ -47,6 +47,20 @@ async function runAllModulesInit(root: string, ...options: string[]): Promise<st
   return stdout;
 }
 
+async function runModulesInit(
+  root: string,
+  modules: string,
+  ...options: string[]
+): Promise<string> {
+  const executable = path.join(process.cwd(), 'node_modules/.bin/tsx');
+  const { stdout } = await execFileAsync(
+    executable,
+    ['src/cli.ts', 'init', root, '--modules', modules, ...options],
+    { cwd: process.cwd() },
+  );
+  return stdout;
+}
+
 void afterEach(async () => {
   await Promise.all(
     temporaryDirectories
@@ -110,4 +124,34 @@ void test('preserves detected navigation by default when all modules run non-int
   assert.match(output, /Existing navigation: Expo Router/u);
   assert.match(output, /Navigation: Keep existing Expo Router/u);
   assert.doesNotMatch(output, /src\/app\/_layout\.tsx/u);
+});
+
+void test('defaults to manual app integration in non-interactive runs', async () => {
+  const root = await createExpoApp();
+  await writeFile(
+    path.join(root, 'App.tsx'),
+    `export default function App() { return <LegacyApp />; }\n`,
+  );
+
+  const output = await runModulesInit(root, 'tanstack-query', '--dry-run');
+
+  assert.match(output, /App integration: Manual/u);
+  assert.match(output, /Manual app integration/u);
+  assert.match(output, /Wrap the application root with AppProviders/u);
+  assert.doesNotMatch(output, /Automatic app integration/u);
+});
+
+void test('previews automatic integration only when explicitly enabled non-interactively', async () => {
+  const root = await createExpoApp();
+  await writeFile(
+    path.join(root, 'App.tsx'),
+    `export default function App() { return <LegacyApp />; }\n`,
+  );
+
+  const output = await runModulesInit(root, 'tanstack-query', '--integrate', '--dry-run');
+
+  assert.match(output, /App integration: Automatic/u);
+  assert.match(output, /Automatic app integration/u);
+  assert.match(output, /~ App\.tsx/u);
+  assert.doesNotMatch(output, /Manual app integration/u);
 });

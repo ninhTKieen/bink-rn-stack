@@ -57,6 +57,7 @@ export function formatSetupPreview(preview: SetupPreview): string {
     `Selected modules: ${moduleLabels(preview.selectedModules).join(', ')}`,
     ...(existingNavigation === undefined ? [] : [`Existing navigation: ${existingNavigation}`]),
     ...(navigation === undefined ? [] : [`Navigation: ${navigation}`]),
+    `App integration: ${preview.appIntegration === 'automatic' ? 'Automatic' : 'Manual'}`,
     '',
     'Dependencies',
   ];
@@ -79,8 +80,19 @@ export function formatSetupPreview(preview: SetupPreview): string {
       : `  ${preview.installCommand}`,
   );
 
+  if (preview.integrations.length > 0) {
+    lines.push('', 'Automatic app integration');
+    for (const integration of preview.integrations) {
+      const marker =
+        integration.status === 'create' ? '+' : integration.status === 'modify' ? '~' : '=';
+      const status = integration.status === 'unchanged' ? ' (already integrated)' : '';
+      lines.push(`  ${marker} ${integration.path}${status}`);
+      integration.descriptions.forEach((description) => lines.push(`    - ${description}`));
+    }
+  }
+
   if (preview.integrationSteps.length > 0) {
-    lines.push('', 'App integration');
+    lines.push('', 'Manual app integration');
     preview.integrationSteps.forEach((step) => lines.push(`  - ${step}`));
   }
 

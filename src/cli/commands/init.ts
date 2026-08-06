@@ -3,6 +3,7 @@ import type { Command } from 'commander';
 import type { InitOptions } from '@/cli/commands/init.types.js';
 import { formatSetupPreview } from '@/cli/output/format-setup-preview.js';
 import { promptToApplySetup } from '@/cli/prompts/confirm-setup.js';
+import { selectAppIntegration } from '@/cli/prompts/select-app-integration.js';
 import { selectNavigationLibrary } from '@/cli/prompts/select-navigation.js';
 import { parseModuleOption, promptForModules } from '@/cli/prompts/select-modules.js';
 import { CLI_VERSION } from '@/configs/constants.js';
@@ -24,6 +25,8 @@ export function registerInitCommand(program: Command): void {
     .option('--dry-run', 'show the setup preview without making changes')
     .option('-y, --yes', 'apply without asking for confirmation')
     .option('--force', 'overwrite generated files that differ from the preview')
+    .option('--integrate', 'automatically update supported application and config files')
+    .option('--no-integrate', 'skip application-file changes and print manual integration steps')
     .option('--json', 'print the detection result as JSON')
     .option(
       '--navigation <library>',
@@ -65,9 +68,11 @@ export function registerInitCommand(program: Command): void {
         existingNavigation,
         options.navigation,
       );
+      const appIntegration = await selectAppIntegration(selectedModules, options.integrate);
       const plan = await buildSetupPlan(result, selectedModules, {
         ...(navigation === undefined ? {} : { navigation }),
         existingNavigation,
+        appIntegration,
       });
 
       process.stdout.write(`${formatSetupPreview(plan.preview)}\n`);
@@ -107,6 +112,9 @@ export function registerInitCommand(program: Command): void {
           `Files created: ${execution.files.created.length}\n` +
           `Files unchanged: ${execution.files.unchanged.length}\n` +
           `Files overwritten: ${execution.files.overwritten.length}\n` +
+          `App files created: ${execution.integrations.created.length}\n` +
+          `App files modified: ${execution.integrations.modified.length}\n` +
+          `App files unchanged: ${execution.integrations.unchanged.length}\n` +
           'Manifest: .bink-rn-stack.json\n',
       );
     });

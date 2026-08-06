@@ -92,6 +92,22 @@ export type {
   ReactHookFormGeneratorOptions,
   RenderedReactHookFormFile,
 } from '@/generators/react-hook-form/react-hook-form-generator.types.js';
+export { planAppIntegrations } from '@/integrations/integration-planner.js';
+export { rebaseIntegrationChangesAfterInstall } from '@/integrations/integration-rebaser.js';
+export {
+  IntegrationWriteConflictError,
+  verifyIntegrationChanges,
+  writeIntegrationChanges,
+} from '@/integrations/integration-writer.js';
+export type {
+  AppIntegrationMode,
+  IntegrationChange,
+  IntegrationChangeStatus,
+  IntegrationPlan,
+  IntegrationPlannerOptions,
+  IntegrationWriteResult,
+  PreviewIntegrationChange,
+} from '@/integrations/integration.types.js';
 export {
   createUnistylesFileRecipes,
   renderUnistylesFoundation,

@@ -4,6 +4,7 @@ import path from 'node:path';
 
 import type { GenerationManifest } from '@/core/generation-manifest.types.js';
 import type { RenderedFoundation } from '@/generators/foundation-renderer.types.js';
+import type { IntegrationChange } from '@/integrations/integration.types.js';
 import { STACK_MODULE_NAMES } from '@/modules/stack-module.js';
 import { isNavigationLibrary } from '@/modules/navigation.js';
 import type { StackModuleName } from '@/modules/stack-module.types.js';
@@ -29,6 +30,13 @@ function parseManifest(value: unknown): GenerationManifest | undefined {
       (entry): entry is [string, string] => typeof entry[1] === 'string',
     ),
   );
+  const integrations = isRecord(value.integrations)
+    ? Object.fromEntries(
+        Object.entries(value.integrations).filter(
+          (entry): entry is [string, string] => typeof entry[1] === 'string',
+        ),
+      )
+    : {};
 
   return {
     version: typeof value.version === 'string' ? value.version : 'unknown',
@@ -37,6 +45,7 @@ function parseManifest(value: unknown): GenerationManifest | undefined {
       ? { navigation: value.navigation }
       : {}),
     files,
+    integrations,
   };
 }
 
@@ -59,6 +68,7 @@ function contentHash(content: string): string {
 export async function writeGenerationManifest(
   projectRoot: string,
   foundation: RenderedFoundation,
+  integrations: readonly IntegrationChange[],
   version: string,
 ): Promise<GenerationManifest> {
   const manifestPath = path.join(path.resolve(projectRoot), GENERATION_MANIFEST_FILENAME);
@@ -79,6 +89,12 @@ export async function writeGenerationManifest(
     files: {
       ...(existingManifest?.files ?? {}),
       ...Object.fromEntries(foundation.files.map((file) => [file.path, contentHash(file.content)])),
+    },
+    integrations: {
+      ...(existingManifest?.integrations ?? {}),
+      ...Object.fromEntries(
+        integrations.map((integration) => [integration.path, contentHash(integration.content)]),
+      ),
     },
   };
   const temporaryPath = path.join(

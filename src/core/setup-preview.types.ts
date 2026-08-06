@@ -2,6 +2,11 @@ import type { ExistingNavigationDetection } from '@/core/detect-navigation.types
 import type { ProjectDetection } from '@/core/detect-project.types.js';
 import type { NavigationStrategy } from '@/modules/navigation.types.js';
 import type { StackModuleName } from '@/modules/stack-module.types.js';
+import type {
+  AppIntegrationMode,
+  IntegrationChange,
+  PreviewIntegrationChange,
+} from '@/integrations/integration.types.js';
 
 export type PreviewDependencyStatus = 'install' | 'existing';
 export type PreviewFileStatus = 'create' | 'unchanged' | 'conflict';
@@ -24,8 +29,10 @@ export interface SetupPreview {
   navigation?: NavigationStrategy;
   existingNavigation?: ExistingNavigationDetection;
   navigationReplacement: boolean;
+  appIntegration: AppIntegrationMode;
   dependencies: PreviewDependency[];
   files: PreviewFile[];
+  integrations: PreviewIntegrationChange[];
   installCommand?: string;
   integrationSteps: string[];
   nativeSteps: string[];
@@ -35,11 +42,13 @@ export interface SetupPreview {
 export interface SetupPlan {
   preview: SetupPreview;
   foundation: RenderedFoundation;
+  integrations: IntegrationChange[];
 }
 
 export interface SetupPlanOptions {
   navigation?: NavigationStrategy;
   existingNavigation?: ExistingNavigationDetection;
+  appIntegration?: AppIntegrationMode;
 }
 
 export interface PreviewEntrySources {

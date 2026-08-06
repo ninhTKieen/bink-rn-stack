@@ -203,7 +203,12 @@ void test('previews Expo Router dependencies, routes, and integration', async ()
     ['src/app/_layout.tsx', 'src/app/index.tsx'],
   );
   assert.match(preview.installCommand ?? '', /^pnpm add expo-router /u);
-  assert.ok(preview.integrationSteps.some((step) => step.includes('expo-router/entry')));
+  assert.ok(
+    preview.integrations.some(
+      ({ path: filePath, status }) => filePath === 'package.json' && status === 'modify',
+    ),
+  );
+  assert.ok(!preview.integrationSteps.some((step) => step.includes('expo-router/entry')));
 });
 
 void test('preserves existing navigation without installing or generating it again', async () => {
@@ -232,11 +237,6 @@ void test('preserves existing navigation without installing or generating it aga
     ['@tanstack/react-query'],
   );
   assert.ok(!preview.files.some(({ path: filePath }) => filePath.startsWith('src/app/')));
-  assert.ok(
-    preview.integrationSteps.includes(
-      'Keep the existing navigation dependencies and source files.',
-    ),
-  );
   assert.ok(preview.integrationSteps.includes('Wrap the application root with AppProviders.'));
 });
 

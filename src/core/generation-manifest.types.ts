@@ -6,4 +6,5 @@ export interface GenerationManifest {
   modules: StackModuleName[];
   navigation?: NavigationLibrary;
   files: Record<string, string>;
+  integrations: Record<string, string>;
 }

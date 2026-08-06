@@ -11,6 +11,7 @@ import {
   UnsafeFoundationPathError,
 } from '@/core/foundation-writer.js';
 import { NavigationReplacementError } from '@/core/setup-executor.js';
+import { IntegrationWriteConflictError } from '@/integrations/integration-writer.js';
 
 runCli().catch((error: unknown) => {
   if (
@@ -21,11 +22,15 @@ runCli().catch((error: unknown) => {
     error instanceof DependencyInstallationError ||
     error instanceof NavigationReplacementError ||
     error instanceof FoundationWriteConflictError ||
+    error instanceof IntegrationWriteConflictError ||
     error instanceof UnsafeFoundationPathError
   ) {
     process.stderr.write(`Error: ${error.message}\n`);
     if (error instanceof FoundationWriteConflictError) {
       process.stderr.write('Re-run with --force to overwrite these generated files.\n');
+    }
+    if (error instanceof IntegrationWriteConflictError) {
+      process.stderr.write('Run the preview again before applying setup.\n');
     }
     if (error instanceof NavigationReplacementError) {
       process.stderr.write('Re-run with --force only after reviewing the navigation migration.\n');

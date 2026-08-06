@@ -14,6 +14,7 @@ import type {
   SetupPreview,
 } from '@/core/setup-preview.types.js';
 import { renderSelectedFoundations } from '@/generators/foundation-renderer.js';
+import { planAppIntegrations } from '@/integrations/integration-planner.js';
 import { STACK_MODULES } from '@/modules/stack-module.js';
 import { getNavigationDefinition } from '@/modules/navigation.js';
 import type { NavigationStrategy } from '@/modules/navigation.types.js';
@@ -142,7 +143,7 @@ function integrationStepsForDefinition(
 ): readonly string[] {
   if (definition.name === 'navigation') {
     if (navigation === 'keep') {
-      return ['Keep the existing navigation dependencies and source files.'];
+      return [];
     }
 
     return navigation === undefined ? [] : getNavigationDefinition(navigation).integrationSteps;
@@ -266,29 +267,59 @@ export async function buildSetupPlan(
     project.packageManager.name === 'unknown'
       ? undefined
       : createPackageInstallCommand(project.packageManager.name, missingDependencies);
+  const requestedIntegrationSteps = uniqueValues(
+    definitions.flatMap((definition) =>
+      integrationStepsForDefinition(
+        definition,
+        navigation !== undefined && navigation !== 'keep',
+        navigation,
+      ),
+    ),
+  );
+  const appIntegration = options.appIntegration ?? 'automatic';
+  const integrations =
+    appIntegration === 'automatic'
+      ? await planAppIntegrations({
+          project,
+          selectedModules: foundation.selectedModules,
+          ...(navigation === undefined ? {} : { navigation }),
+          ...(selectedModules.includes('navigation') ? { existingNavigation } : {}),
+          integrationSteps: requestedIntegrationSteps,
+        })
+      : {
+          changes: [],
+          remainingSteps: requestedIntegrationSteps,
+          warnings: [],
+        };
+  warnings.push(...integrations.warnings);
+
   const preview: SetupPreview = {
     project,
     selectedModules: foundation.selectedModules,
     ...(navigation === undefined ? {} : { navigation }),
     ...(selectedModules.includes('navigation') ? { existingNavigation } : {}),
     navigationReplacement,
+    appIntegration,
     dependencies,
     files,
+    integrations: integrations.changes.map((change) => ({
+      path: change.path,
+      status:
+        change.before === null
+          ? 'create'
+          : change.before === change.content
+            ? 'unchanged'
+            : 'modify',
+      descriptions: change.descriptions,
+      requestedBy: change.requestedBy,
+    })),
     ...(installCommand === undefined ? {} : { installCommand: installCommand.display }),
-    integrationSteps: uniqueValues(
-      definitions.flatMap((definition) =>
-        integrationStepsForDefinition(
-          definition,
-          navigation !== undefined && navigation !== 'keep',
-          navigation,
-        ),
-      ),
-    ),
+    integrationSteps: integrations.remainingSteps,
     nativeSteps,
     warnings,
   };
 
-  return { preview, foundation };
+  return { preview, foundation, integrations: integrations.changes };
 }
 
 export async function buildSetupPreview(

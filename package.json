@@ -1,6 +1,6 @@
 {
   "name": "bink-rn-stack",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Set up an opinionated stack for React Native and Expo applications.",
   "type": "module",
   "main": "./dist/index.js",
@@ -15,7 +15,8 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
+    "build": "yarn clean && tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
+    "clean": "node --input-type=module --eval \"import { rmSync } from 'node:fs'; rmSync('dist', { recursive: true, force: true });\"",
     "dev": "tsx src/cli.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -31,11 +32,17 @@
   "author": "andrew ninh",
   "license": "MIT",
   "dependencies": {
+    "@babel/generator": "^7.29.8",
+    "@babel/parser": "^7.29.8",
+    "@babel/traverse": "^7.29.8",
+    "@babel/types": "^7.29.8",
     "@inquirer/prompts": "^7.10.1",
     "commander": "^14.0.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
+    "@types/babel__generator": "^7.27.0",
+    "@types/babel__traverse": "^7.28.0",
     "@types/node": "^26.1.2",
     "eslint": "^9.39.5",
     "eslint-config-prettier": "^10.1.8",
