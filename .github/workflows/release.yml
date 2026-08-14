@@ -22,19 +22,20 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write # create the release tag
-      id-token: write # npm publish --provenance
+      id-token: write # npm trusted publishing (OIDC)
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: '24'
-          cache: yarn
-          # No registry-url on purpose: it writes an .npmrc auth line bound to
-          # NODE_AUTH_TOKEN, which conflicts with OIDC trusted publishing.
+          registry-url: 'https://registry.npmjs.org'
+          package-manager-cache: false
 
       - name: Use an npm with trusted publishing support
-        run: npm install -g npm@latest
+        run: |
+          npm install -g npm@latest
+          npm --version
 
       - name: Install dependencies
         run: yarn install --frozen-lockfile

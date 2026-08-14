@@ -438,6 +438,28 @@ import { detectProject } from '@/core/detect-project.js';
 
 The build rewrites internal aliases to Node-compatible relative imports in `dist`.
 
+### Publishing to npm
+
+Releases use npm Trusted Publishing with GitHub Actions OIDC, so the workflow does not need a
+long-lived `NPM_TOKEN`. Configure the package once on npmjs.com under
+**Package settings → Trusted Publisher → GitHub Actions** with these exact, case-sensitive values:
+
+| Setting              | Value           |
+| -------------------- | --------------- |
+| Organization or user | `ninhTKieen`    |
+| Repository           | `bink-rn-stack` |
+| Workflow filename    | `release.yml`   |
+| Environment          | Leave empty     |
+| Allowed action       | `npm publish`   |
+
+The package must already exist on npm before a trusted publisher can be added. For the first-ever
+release, publish once from an authenticated local machine, then configure the trusted publisher.
+The release workflow requires a GitHub-hosted runner, Node 22.14 or newer, npm 11.5.1 or newer, and
+the `id-token: write` permission.
+
+An `ENEEDAUTH` error in the publish step normally means the npm trusted-publisher repository,
+workflow filename, optional environment, or allowed action does not exactly match the workflow.
+
 ## Roadmap
 
 - Compatibility-aware dependency resolution for each Expo SDK and React Native version.

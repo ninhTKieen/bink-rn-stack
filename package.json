@@ -2,6 +2,14 @@
   "name": "bink-rn-stack",
   "version": "0.1.3",
   "description": "Set up an opinionated stack for React Native and Expo applications.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ninhTKieen/bink-rn-stack.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ninhTKieen/bink-rn-stack/issues"
+  },
+  "homepage": "https://github.com/ninhTKieen/bink-rn-stack#readme",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
