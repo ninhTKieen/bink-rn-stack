@@ -10,7 +10,7 @@ import {
   FoundationWriteConflictError,
   UnsafeFoundationPathError,
 } from '@/core/foundation-writer.js';
-import { NavigationReplacementError } from '@/core/setup-executor.js';
+import { NavigationReplacementError, SetupTransactionError } from '@/core/setup-executor.js';
 import { IntegrationWriteConflictError } from '@/integrations/integration-writer.js';
 
 runCli().catch((error: unknown) => {
@@ -21,6 +21,7 @@ runCli().catch((error: unknown) => {
     error instanceof NavigationSelectionError ||
     error instanceof DependencyInstallationError ||
     error instanceof NavigationReplacementError ||
+    error instanceof SetupTransactionError ||
     error instanceof FoundationWriteConflictError ||
     error instanceof IntegrationWriteConflictError ||
     error instanceof UnsafeFoundationPathError
@@ -34,6 +35,18 @@ runCli().catch((error: unknown) => {
     }
     if (error instanceof NavigationReplacementError) {
       process.stderr.write('Re-run with --force only after reviewing the navigation migration.\n');
+    }
+    if (error instanceof SetupTransactionError) {
+      if (error.rollback.failures.length === 0) {
+        process.stderr.write(
+          'Generated files, application files, package.json, and lockfiles were restored.\n',
+        );
+      } else {
+        process.stderr.write('Rollback could not restore every path:\n');
+        error.rollback.failures.forEach((failure) =>
+          process.stderr.write(`- ${failure.path}: ${failure.message}\n`),
+        );
+      }
     }
   } else if (error instanceof Error && error.name === 'ExitPromptError') {
     process.stderr.write('\nSetup cancelled.\n');

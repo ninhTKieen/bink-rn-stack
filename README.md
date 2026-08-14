@@ -353,6 +353,23 @@ Generated files follow these rules:
 - Regenerating or switching detected navigation requires `--force`, even when generated paths do not directly conflict.
 - If dependency installation fails, source generation does not start.
 
+The apply phase is transactional. Before installing dependencies, the CLI snapshots every project
+file it may change. If dependency installation, generation, automatic integration, or manifest
+writing fails, it restores:
+
+- `package.json` and known npm, Yarn, pnpm, and Bun lockfiles.
+- Generated foundation files, including files replaced with `--force`.
+- Application and configuration files changed by automatic integration.
+- The previous `.bink-rn-stack.json` manifest.
+
+Files created by the failed run are removed, and empty directories created for them are cleaned up.
+If any path cannot be restored, the CLI reports an incomplete rollback and lists each affected path.
+
+Package-manager caches and extra packages downloaded into `node_modules` are not copied or removed
+during rollback. Restoring the package manifest and lockfile returns the declared dependency state;
+run the package manager again if you need to reconcile installed artifacts. Rollback runs for handled
+setup failures, but cannot be guaranteed after an abrupt process termination or machine shutdown.
+
 Successful runs also create `.bink-rn-stack.json`. It records the CLI version, selected modules, selected navigation library, generated paths, automatically integrated paths, and content hashes. This metadata is intended to support safe update and removal commands in the future.
 
 Application files planned for automatic integration are protected separately. The CLI records their exact contents during preview, verifies them before dependency installation, and verifies them again before writing. If one changes during setup, the run stops and asks for a fresh preview.
@@ -425,6 +442,5 @@ The build rewrites internal aliases to Node-compatible relative imports in `dist
 
 - Compatibility-aware dependency resolution for each Expo SDK and React Native version.
 - CI-friendly `check` command.
-- Transactional rollback when a setup step fails.
 - Safe `add`, `update`, and `remove` workflows.
 - User-defined presets, languages, theme tokens, and generator options.

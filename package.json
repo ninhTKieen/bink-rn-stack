@@ -1,6 +1,6 @@
 {
   "name": "bink-rn-stack",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Set up an opinionated stack for React Native and Expo applications.",
   "type": "module",
   "main": "./dist/index.js",

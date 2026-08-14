@@ -7,8 +7,12 @@ import { afterEach, test } from 'node:test';
 import { detectProject } from '@/core/detect-project.js';
 import { FoundationWriteConflictError } from '@/core/foundation-writer.js';
 import type { GenerationManifest } from '@/core/generation-manifest.types.js';
-import { executeSetupPlan } from '@/core/setup-executor.js';
-import { NavigationReplacementError } from '@/core/setup-executor.js';
+import {
+  executeSetupPlan,
+  NavigationReplacementError,
+  SetupTransactionError,
+} from '@/core/setup-executor.js';
+import type { SetupExecutionPhase } from '@/core/setup-executor.types.js';
 import { buildSetupPlan } from '@/core/setup-preview.js';
 
 const temporaryDirectories: string[] = [];
@@ -106,6 +110,109 @@ void test('does not generate files when dependency installation fails', async ()
 
   await assert.rejects(access(path.join(root, 'src/api/client.ts')));
   await assert.rejects(access(path.join(root, '.bink-rn-stack.json')));
+});
+
+void test('restores package.json and removes a newly created lockfile when installation fails', async () => {
+  const root = await createExpoApp({});
+  const packageJsonPath = path.join(root, 'package.json');
+  const originalPackageJson = await readFile(packageJsonPath, 'utf8');
+  const plan = await buildSetupPlan(await detectProject(root), ['axios']);
+
+  await assert.rejects(
+    executeSetupPlan(plan, '1.2.3', {
+      commandRunner: async () => {
+        await writeFile(packageJsonPath, '{"mutated":true}\n');
+        await writeFile(path.join(root, 'yarn.lock'), 'mutated lockfile\n');
+        throw new Error('package manager failed after mutation');
+      },
+    }),
+    (error: unknown) => {
+      assert.ok(error instanceof SetupTransactionError);
+      assert.equal(error.rollback.failures.length, 0);
+      assert.match(error.message, /Project files were rolled back/u);
+      return true;
+    },
+  );
+
+  assert.equal(await readFile(packageJsonPath, 'utf8'), originalPackageJson);
+  await assert.rejects(access(path.join(root, 'yarn.lock')));
+  await assert.rejects(access(path.join(root, 'src/api/client.ts')));
+});
+
+void test('rolls back files after every completed setup phase', async (context) => {
+  const phases: SetupExecutionPhase[] = [
+    'dependencies-installed',
+    'foundations-written',
+    'integrations-written',
+    'manifest-written',
+  ];
+
+  for (const phase of phases) {
+    await context.test(phase, async () => {
+      const root = await createExpoApp({ '@tanstack/react-query': '^5.0.0' });
+      const appPath = path.join(root, 'App.tsx');
+      const originalApp = 'export default function App() { return <LegacyApp />; }\n';
+      const originalManifest = '{"original":true}\n';
+      await writeFile(appPath, originalApp);
+      await writeFile(path.join(root, '.bink-rn-stack.json'), originalManifest);
+      const plan = await buildSetupPlan(await detectProject(root), ['tanstack-query'], {
+        appIntegration: 'automatic',
+      });
+
+      await assert.rejects(
+        executeSetupPlan(plan, '1.2.3', {
+          onPhase: (completedPhase) => {
+            if (completedPhase === phase) {
+              throw new Error(`failure after ${phase}`);
+            }
+          },
+        }),
+        (error: unknown) => {
+          assert.ok(error instanceof SetupTransactionError);
+          assert.equal(error.rollback.failures.length, 0);
+          assert.match(error.message, new RegExp(`failure after ${phase}`));
+          return true;
+        },
+      );
+
+      assert.equal(await readFile(appPath, 'utf8'), originalApp);
+      assert.equal(
+        await readFile(path.join(root, '.bink-rn-stack.json'), 'utf8'),
+        originalManifest,
+      );
+      for (const file of plan.foundation.files) {
+        await assert.rejects(access(path.join(root, file.path)));
+      }
+    });
+  }
+});
+
+void test('restores generated files overwritten with force when a later phase fails', async () => {
+  const root = await createExpoApp({ axios: '^1.0.0' });
+  const clientPath = path.join(root, 'src/api/client.ts');
+  const originalClient = 'user-owned client\n';
+  await mkdir(path.dirname(clientPath), { recursive: true });
+  await writeFile(clientPath, originalClient);
+  const plan = await buildSetupPlan(await detectProject(root), ['axios']);
+
+  await assert.rejects(
+    executeSetupPlan(plan, '1.2.3', {
+      force: true,
+      onPhase: (phase) => {
+        if (phase === 'foundations-written') {
+          throw new Error('failure after overwrite');
+        }
+      },
+    }),
+    SetupTransactionError,
+  );
+
+  assert.equal(await readFile(clientPath, 'utf8'), originalClient);
+  for (const file of plan.foundation.files) {
+    if (file.path !== 'src/api/client.ts') {
+      await assert.rejects(access(path.join(root, file.path)));
+    }
+  }
 });
 
 void test('records the selected navigation library in the manifest', async () => {
