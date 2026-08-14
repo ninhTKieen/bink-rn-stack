@@ -20,11 +20,17 @@ export type {
   ProjectDetectionErrorCode,
   ProjectKind,
 } from '@/core/detect-project.types.js';
-export { DependencyInstallationError, installDependencies } from '@/core/dependency-installer.js';
+export {
+  DependencyInstallationError,
+  DependencyRemovalError,
+  installDependencies,
+  removeDependencies,
+} from '@/core/dependency-installer.js';
 export type {
   CommandRunner,
   DependencyInstallOptions,
   DependencyInstallResult,
+  DependencyRemovalResult,
 } from '@/core/dependency-installer.types.js';
 export {
   FoundationWriteConflictError,
@@ -40,10 +46,17 @@ export type {
 export {
   GENERATION_MANIFEST_FILENAME,
   parseGenerationManifest,
+  readGenerationManifest,
   writeGenerationManifest,
 } from '@/core/generation-manifest.js';
-export type { GenerationManifest } from '@/core/generation-manifest.types.js';
-export { createPackageInstallCommand } from '@/core/package-manager-command.js';
+export type {
+  GenerationManifest,
+  GenerationManifestWriteOptions,
+} from '@/core/generation-manifest.types.js';
+export {
+  createPackageInstallCommand,
+  createPackageRemoveCommand,
+} from '@/core/package-manager-command.js';
 export type { PackageManagerCommand } from '@/core/package-manager-command.types.js';
 export { executeSetupPlan, NavigationReplacementError } from '@/core/setup-executor.js';
 export { SetupTransactionError } from '@/core/setup-executor.js';
@@ -61,6 +74,26 @@ export type {
 } from '@/core/setup-transaction.types.js';
 export type { SetupExecutionOptions, SetupExecutionResult } from '@/core/setup-executor.types.js';
 export type { SetupExecutionPhase } from '@/core/setup-executor.types.js';
+export {
+  buildLifecyclePlan,
+  executeLifecyclePlan,
+  LifecycleConflictError,
+  LifecycleIntegrationCleanupError,
+  LifecycleManifestError,
+  LifecycleSelectionError,
+  requireGenerationManifest,
+  resolveLifecycleModules,
+} from '@/core/lifecycle.js';
+export type {
+  BuildLifecyclePlanOptions,
+  LifecycleAction,
+  LifecycleDependencyPlan,
+  LifecycleExecutionOptions,
+  LifecycleExecutionResult,
+  LifecycleFileAction,
+  LifecycleFileChange,
+  LifecyclePlan,
+} from '@/core/lifecycle.types.js';
 export { buildSetupPlan, buildSetupPreview } from '@/core/setup-preview.js';
 export type {
   PreviewDependency,

@@ -76,3 +76,27 @@ export async function promptForModules(): Promise<StackModuleName[]> {
     required: true,
   });
 }
+
+export async function promptForModuleSubset(
+  message: string,
+  availableModules: readonly StackModuleName[],
+): Promise<StackModuleName[]> {
+  if (process.stdin.isTTY !== true || process.stdout.isTTY !== true) {
+    throw new ModuleSelectionError(
+      `Interactive module selection requires a terminal. Pass --modules with one or more of: ${availableModules.join(', ')}.`,
+    );
+  }
+
+  const available = new Set(availableModules);
+  return checkbox<StackModuleName>({
+    message,
+    choices: STACK_MODULES.filter(({ name }) => available.has(name)).map(
+      ({ name, label, description }) => ({
+        name: label,
+        value: name,
+        description,
+      }),
+    ),
+    required: true,
+  });
+}

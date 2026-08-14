@@ -95,6 +95,10 @@ void test('installs dependencies before generating source files', async () => {
   assert.equal(filesExistedDuringInstall, false);
   assert.deepEqual(result.installedDependencies, ['axios']);
   await access(path.join(root, 'src/api/client.ts'));
+  const manifest = JSON.parse(
+    await readFile(path.join(root, '.bink-rn-stack.json'), 'utf8'),
+  ) as GenerationManifest;
+  assert.deepEqual(manifest.managedDependencies, ['axios']);
 });
 
 void test('does not generate files when dependency installation fails', async () => {

@@ -25,3 +25,28 @@ export function createPackageInstallCommand(
     display: [selectedCommand.command, ...args].join(' '),
   };
 }
+
+export function createPackageRemoveCommand(
+  packageManager: PackageManagerName,
+  dependencies: readonly string[],
+): PackageManagerCommand | undefined {
+  if (dependencies.length === 0) {
+    return undefined;
+  }
+
+  const commands = {
+    npm: { command: 'npm', args: ['uninstall'] },
+    yarn: { command: 'yarn', args: ['remove'] },
+    pnpm: { command: 'pnpm', args: ['remove'] },
+    bun: { command: 'bun', args: ['remove'] },
+  } as const;
+  const selectedCommand = commands[packageManager];
+  const args = [...selectedCommand.args, ...dependencies];
+
+  return {
+    packageManager,
+    command: selectedCommand.command,
+    args,
+    display: [selectedCommand.command, ...args].join(' '),
+  };
+}

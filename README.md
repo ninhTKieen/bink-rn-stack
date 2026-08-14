@@ -131,6 +131,34 @@ npx bink-rn-stack init ../my-app --json
 npx bink-rn-stack doctor ../my-app
 ```
 
+### Add modules later
+
+```bash
+npx bink-rn-stack add ../my-app --modules react-hook-form,tanstack-query
+```
+
+`add` reconciles the complete tracked stack, so shared provider and barrel files include both the
+existing and newly selected modules. Use `--integrate` to apply supported application changes.
+
+### Update generated foundations
+
+```bash
+npx bink-rn-stack update ../my-app
+```
+
+`update` regenerates every module recorded in `.bink-rn-stack.json` using the current CLI templates.
+It does not arbitrarily upgrade already installed dependency versions.
+
+### Remove modules
+
+```bash
+npx bink-rn-stack remove ../my-app --modules axios,react-hook-form
+```
+
+`remove` deletes generated paths only when their hashes still match the manifest. It uninstalls only
+dependencies that were originally installed by this CLI and are no longer required by another
+tracked module. Pass `--keep-dependencies` to preserve them.
+
 ## Command options
 
 ```text
@@ -150,6 +178,27 @@ npx bink-rn-stack init [path] [options]
 | `-h, --help`              | Show command help                                                    |
 
 Available module names are `navigation`, `axios`, `unistyles`, `zustand`, `react-hook-form`, `tanstack-query`, and `i18n`.
+
+### Lifecycle command options
+
+```text
+npx bink-rn-stack add [path] [options]
+npx bink-rn-stack update [path] [options]
+npx bink-rn-stack remove [path] [options]
+```
+
+| Option                    | Commands        | Description                                                   |
+| ------------------------- | --------------- | ------------------------------------------------------------- |
+| `-m, --modules <modules>` | `add`, `remove` | Select `all` or a comma-separated module list                 |
+| `--navigation <library>`  | `add`           | Choose navigation when adding the Navigation module           |
+| `--integrate`             | `add`, `update` | Apply supported application integrations                      |
+| `--no-integrate`          | `add`, `update` | Preserve application files and print manual steps             |
+| `--keep-dependencies`     | `remove`        | Do not uninstall dependencies previously installed by the CLI |
+| `--dry-run`               | All             | Print the lifecycle preview without changing the project      |
+| `-y, --yes`               | All             | Apply without asking for confirmation                         |
+| `--force`                 | All             | Replace drifted generated paths after reviewing the preview   |
+
+All lifecycle commands require a valid `.bink-rn-stack.json` created by `init`.
 
 ## Doctor
 
@@ -370,7 +419,21 @@ during rollback. Restoring the package manifest and lockfile returns the declare
 run the package manager again if you need to reconcile installed artifacts. Rollback runs for handled
 setup failures, but cannot be guaranteed after an abrupt process termination or machine shutdown.
 
-Successful runs also create `.bink-rn-stack.json`. It records the CLI version, selected modules, selected navigation library, generated paths, automatically integrated paths, and content hashes. This metadata is intended to support safe update and removal commands in the future.
+Successful runs also create `.bink-rn-stack.json`. It records the CLI version, selected modules,
+selected navigation library, generated and automatically integrated path hashes, and direct
+dependencies installed by the CLI. The `add`, `update`, `remove`, and `doctor` commands use this
+metadata instead of guessing which project files or dependencies they own.
+
+Lifecycle commands verify every generated path against its preview immediately before applying.
+Drifted tracked files and occupied new generator paths stop the command unless `--force` is supplied.
+Older manifests without dependency-ownership metadata remain supported; removal preserves their
+dependencies because it cannot safely know who installed them.
+
+Automatic integrations cannot always be reversed without destroying application code written after
+setup. When removing Navigation, Unistyles, TanStack Query, or i18n from an automatically integrated
+application, the CLI preserves application/configuration files, prints a cleanup warning, and
+requires `--force`. Review obsolete imports, wrappers, Babel plugins, and Expo configuration before
+applying.
 
 Application files planned for automatic integration are protected separately. The CLI records their exact contents during preview, verifies them before dependency installation, and verifies them again before writing. If one changes during setup, the run stops and asks for a fresh preview.
 
@@ -464,5 +527,4 @@ workflow filename, optional environment, or allowed action does not exactly matc
 
 - Compatibility-aware dependency resolution for each Expo SDK and React Native version.
 - CI-friendly `check` command.
-- Safe `add`, `update`, and `remove` workflows.
 - User-defined presets, languages, theme tokens, and generator options.

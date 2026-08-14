@@ -114,6 +114,7 @@ export async function executeSetupPlan(
       plan.foundation,
       integrationChanges,
       version,
+      { installedDependencies: installResult.installed },
     );
     await options.onPhase?.('manifest-written');
 

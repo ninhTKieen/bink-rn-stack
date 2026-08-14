@@ -4,13 +4,22 @@ import { runCli } from '@/cli/program.js';
 import { SetupConfirmationError } from '@/cli/prompts/confirm-setup.js';
 import { NavigationSelectionError } from '@/cli/prompts/select-navigation.js';
 import { ModuleSelectionError } from '@/cli/prompts/select-modules.js';
-import { DependencyInstallationError } from '@/core/dependency-installer.js';
+import {
+  DependencyInstallationError,
+  DependencyRemovalError,
+} from '@/core/dependency-installer.js';
 import { ProjectDetectionError } from '@/core/detect-project.js';
 import {
   FoundationWriteConflictError,
   UnsafeFoundationPathError,
 } from '@/core/foundation-writer.js';
 import { NavigationReplacementError, SetupTransactionError } from '@/core/setup-executor.js';
+import {
+  LifecycleConflictError,
+  LifecycleIntegrationCleanupError,
+  LifecycleManifestError,
+  LifecycleSelectionError,
+} from '@/core/lifecycle.js';
 import { IntegrationWriteConflictError } from '@/integrations/integration-writer.js';
 
 runCli().catch((error: unknown) => {
@@ -20,11 +29,16 @@ runCli().catch((error: unknown) => {
     error instanceof SetupConfirmationError ||
     error instanceof NavigationSelectionError ||
     error instanceof DependencyInstallationError ||
+    error instanceof DependencyRemovalError ||
     error instanceof NavigationReplacementError ||
     error instanceof SetupTransactionError ||
     error instanceof FoundationWriteConflictError ||
     error instanceof IntegrationWriteConflictError ||
-    error instanceof UnsafeFoundationPathError
+    error instanceof UnsafeFoundationPathError ||
+    error instanceof LifecycleConflictError ||
+    error instanceof LifecycleIntegrationCleanupError ||
+    error instanceof LifecycleManifestError ||
+    error instanceof LifecycleSelectionError
   ) {
     process.stderr.write(`Error: ${error.message}\n`);
     if (error instanceof FoundationWriteConflictError) {
@@ -47,6 +61,9 @@ runCli().catch((error: unknown) => {
           process.stderr.write(`- ${failure.path}: ${failure.message}\n`),
         );
       }
+    }
+    if (error instanceof LifecycleConflictError) {
+      process.stderr.write('Review the preview and re-run with --force to replace these paths.\n');
     }
   } else if (error instanceof Error && error.name === 'ExitPromptError') {
     process.stderr.write('\nSetup cancelled.\n');

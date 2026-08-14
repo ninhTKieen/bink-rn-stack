@@ -61,6 +61,18 @@ async function runModulesInit(
   return stdout;
 }
 
+async function runLifecycle(
+  root: string,
+  command: 'add' | 'update' | 'remove',
+  ...options: string[]
+): Promise<string> {
+  const executable = path.join(process.cwd(), 'node_modules/.bin/tsx');
+  const { stdout } = await execFileAsync(executable, ['src/cli.ts', command, root, ...options], {
+    cwd: process.cwd(),
+  });
+  return stdout;
+}
+
 void afterEach(async () => {
   await Promise.all(
     temporaryDirectories
@@ -154,4 +166,35 @@ void test('previews automatic integration only when explicitly enabled non-inter
   assert.match(output, /Automatic app integration/u);
   assert.match(output, /~ App\.tsx/u);
   assert.doesNotMatch(output, /Manual app integration/u);
+});
+
+void test('adds, updates, and removes tracked modules through lifecycle commands', async () => {
+  const root = await createExpoApp();
+  const packageJsonPath = path.join(root, 'package.json');
+  const packageJson = JSON.parse(await readFile(packageJsonPath, 'utf8')) as {
+    dependencies: Record<string, string>;
+  };
+  packageJson.dependencies['react-hook-form'] = '^7.0.0';
+  packageJson.dependencies.zod = '^4.0.0';
+  packageJson.dependencies['@hookform/resolvers'] = '^5.0.0';
+  await writeFile(packageJsonPath, JSON.stringify(packageJson));
+  await runInit(root, '--yes');
+
+  const addOutput = await runLifecycle(root, 'add', '--modules', 'react-hook-form', '--yes');
+  assert.match(addOutput, /Add complete/u);
+  assert.match(addOutput, /Modules tracked: 2/u);
+  await access(path.join(root, 'src/forms/fields/FormTextInput.tsx'));
+
+  const updateOutput = await runLifecycle(root, 'update', '--yes');
+  assert.match(updateOutput, /Update complete/u);
+
+  const removeOutput = await runLifecycle(root, 'remove', '--modules', 'react-hook-form', '--yes');
+  assert.match(removeOutput, /Remove complete/u);
+  assert.match(removeOutput, /Modules tracked: 1/u);
+  await assert.rejects(access(path.join(root, 'src/forms/fields/FormTextInput.tsx')));
+
+  const manifest = JSON.parse(await readFile(path.join(root, '.bink-rn-stack.json'), 'utf8')) as {
+    modules: string[];
+  };
+  assert.deepEqual(manifest.modules, ['axios']);
 });
