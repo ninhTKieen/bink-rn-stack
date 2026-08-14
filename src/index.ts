@@ -46,7 +46,21 @@ export type { GenerationManifest } from '@/core/generation-manifest.types.js';
 export { createPackageInstallCommand } from '@/core/package-manager-command.js';
 export type { PackageManagerCommand } from '@/core/package-manager-command.types.js';
 export { executeSetupPlan, NavigationReplacementError } from '@/core/setup-executor.js';
+export { SetupTransactionError } from '@/core/setup-executor.js';
+export {
+  beginSetupTransaction,
+  PACKAGE_MANAGER_TRANSACTION_FILES,
+  rollbackSetupTransaction,
+  UnsafeSetupTransactionPathError,
+} from '@/core/setup-transaction.js';
+export type {
+  SetupFileSnapshot,
+  SetupRollbackFailure,
+  SetupRollbackResult,
+  SetupTransaction,
+} from '@/core/setup-transaction.types.js';
 export type { SetupExecutionOptions, SetupExecutionResult } from '@/core/setup-executor.types.js';
+export type { SetupExecutionPhase } from '@/core/setup-executor.types.js';
 export { buildSetupPlan, buildSetupPreview } from '@/core/setup-preview.js';
 export type {
   PreviewDependency,
