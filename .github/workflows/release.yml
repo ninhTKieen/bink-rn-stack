@@ -30,7 +30,11 @@ jobs:
         with:
           node-version: '24'
           cache: yarn
-          registry-url: https://registry.npmjs.org
+          # No registry-url on purpose: it writes an .npmrc auth line bound to
+          # NODE_AUTH_TOKEN, which conflicts with OIDC trusted publishing.
+
+      - name: Use an npm with trusted publishing support
+        run: npm install -g npm@latest
 
       - name: Install dependencies
         run: yarn install --frozen-lockfile
@@ -71,11 +75,12 @@ jobs:
           "$SMOKE/node_modules/.bin/bink-rn-stack" --help
           rm -f "$TARBALL"
 
+      # Authenticates through OIDC against the trusted publisher configured on
+      # npmjs.com, so no token is involved and npm's 2FA requirement is met.
+      # Provenance is attested automatically here.
       - name: Publish
         if: steps.version.outputs.published == 'false'
-        run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --access public
 
       - name: Tag the release
         if: steps.version.outputs.published == 'false'
