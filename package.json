@@ -22,7 +22,7 @@
     "format:check": "prettier --check .",
     "lint": "eslint . --max-warnings=0",
     "lint:fix": "eslint . --fix",
-    "test": "tsx --test test/**/*.test.ts",
+    "test": "tsx --test test/*.test.ts",
     "typecheck": "tsc -p tsconfig.json",
     "validate": "yarn format:check && yarn lint && yarn typecheck && yarn test && yarn build"
   },
