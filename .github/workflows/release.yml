@@ -1,0 +1,90 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: release-main
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    uses: ./.github/workflows/ci.yml
+
+  publish:
+    name: Publish to npm
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # create the release tag
+      id-token: write # npm publish --provenance
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: yarn
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Resolve version
+        id: version
+        run: |
+          NAME="$(jq -r .name package.json)"
+          VERSION="$(jq -r .version package.json)"
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+
+          if npm view "$NAME@$VERSION" version --silent > /dev/null 2>&1; then
+            echo "published=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::$NAME@$VERSION is already on npm — skipping publish."
+          else
+            echo "published=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::$NAME@$VERSION is new — publishing."
+          fi
+
+      - name: Build
+        if: steps.version.outputs.published == 'false'
+        run: yarn build
+
+      - name: Smoke-test the package tarball
+        if: steps.version.outputs.published == 'false'
+        run: |
+          TARBALL="$(npm pack --silent)"
+          # The CLI resolves templates/ relative to dist/, so a packaging mistake
+          # only shows up once the tarball is installed somewhere else.
+          tar -tzf "$TARBALL" | grep -q '^package/templates/' \
+            || { echo "templates/ is missing from the tarball"; exit 1; }
+
+          SMOKE="$(mktemp -d)"
+          npm install --prefix "$SMOKE" --no-save "$PWD/$TARBALL"
+          "$SMOKE/node_modules/.bin/bink-rn-stack" --version
+          "$SMOKE/node_modules/.bin/bink-rn-stack" --help
+          rm -f "$TARBALL"
+
+      - name: Publish
+        if: steps.version.outputs.published == 'false'
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Tag the release
+        if: steps.version.outputs.published == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+          PKG: ${{ steps.version.outputs.name }}@${{ steps.version.outputs.version }}
+        run: |
+          gh release create "$TAG" \
+            --title "$TAG" \
+            --notes "Published \`$PKG\` to npm." \
+            --generate-notes
