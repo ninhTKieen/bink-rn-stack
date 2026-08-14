@@ -2,7 +2,10 @@ import { randomUUID, createHash } from 'node:crypto';
 import { readFile, rename, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-import type { GenerationManifest } from '@/core/generation-manifest.types.js';
+import type {
+  GenerationManifest,
+  GenerationManifestWriteOptions,
+} from '@/core/generation-manifest.types.js';
 import type { RenderedFoundation } from '@/generators/foundation-renderer.types.js';
 import type { IntegrationChange } from '@/integrations/integration.types.js';
 import { STACK_MODULE_NAMES } from '@/modules/stack-module.js';
@@ -44,12 +47,19 @@ export function parseGenerationManifest(value: unknown): GenerationManifest | un
     ...(typeof value.navigation === 'string' && isNavigationLibrary(value.navigation)
       ? { navigation: value.navigation }
       : {}),
+    ...(Array.isArray(value.managedDependencies)
+      ? {
+          managedDependencies: [
+            ...new Set(value.managedDependencies.filter((entry) => typeof entry === 'string')),
+          ],
+        }
+      : {}),
     files,
     integrations,
   };
 }
 
-async function readManifest(manifestPath: string): Promise<GenerationManifest | undefined> {
+async function readManifestPath(manifestPath: string): Promise<GenerationManifest | undefined> {
   try {
     return parseGenerationManifest(JSON.parse(await readFile(manifestPath, 'utf8')));
   } catch (error) {
@@ -61,6 +71,12 @@ async function readManifest(manifestPath: string): Promise<GenerationManifest | 
   }
 }
 
+export async function readGenerationManifest(
+  projectRoot: string,
+): Promise<GenerationManifest | undefined> {
+  return await readManifestPath(path.join(path.resolve(projectRoot), GENERATION_MANIFEST_FILENAME));
+}
+
 function contentHash(content: string): string {
   return createHash('sha256').update(content).digest('hex');
 }
@@ -70,28 +86,39 @@ export async function writeGenerationManifest(
   foundation: RenderedFoundation,
   integrations: readonly IntegrationChange[],
   version: string,
+  options: GenerationManifestWriteOptions = {},
 ): Promise<GenerationManifest> {
   const manifestPath = path.join(path.resolve(projectRoot), GENERATION_MANIFEST_FILENAME);
-  const existingManifest = await readManifest(manifestPath);
-  const modules = STACK_MODULE_NAMES.filter(
-    (moduleName) =>
-      existingManifest?.modules.includes(moduleName) === true ||
-      foundation.selectedModules.includes(moduleName),
-  );
+  const existingManifest = await readManifestPath(manifestPath);
+  const replace = options.replace === true;
+  const modules = replace
+    ? [...foundation.selectedModules]
+    : STACK_MODULE_NAMES.filter(
+        (moduleName) =>
+          existingManifest?.modules.includes(moduleName) === true ||
+          foundation.selectedModules.includes(moduleName),
+      );
+  const managedDependencies = [
+    ...(options.managedDependencies ?? existingManifest?.managedDependencies ?? []),
+    ...(options.installedDependencies ?? []),
+  ];
   const manifest: GenerationManifest = {
     version,
     modules,
     ...(foundation.navigation === undefined
-      ? existingManifest?.navigation === undefined
+      ? replace || existingManifest?.navigation === undefined
         ? {}
         : { navigation: existingManifest.navigation }
       : { navigation: foundation.navigation }),
+    managedDependencies: [...new Set(managedDependencies)].sort(),
     files: {
-      ...(existingManifest?.files ?? {}),
+      ...(replace ? {} : (existingManifest?.files ?? {})),
       ...Object.fromEntries(foundation.files.map((file) => [file.path, contentHash(file.content)])),
     },
     integrations: {
-      ...(existingManifest?.integrations ?? {}),
+      ...(replace && options.preserveIntegrations !== true
+        ? {}
+        : (existingManifest?.integrations ?? {})),
       ...Object.fromEntries(
         integrations.map((integration) => [integration.path, contentHash(integration.content)]),
       ),

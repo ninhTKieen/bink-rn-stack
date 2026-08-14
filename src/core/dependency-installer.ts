@@ -3,14 +3,25 @@ import { spawn } from 'node:child_process';
 import type {
   DependencyInstallOptions,
   DependencyInstallResult,
+  DependencyRemovalResult,
 } from '@/core/dependency-installer.types.js';
 import type { ProjectDetection } from '@/core/detect-project.types.js';
-import { createPackageInstallCommand } from '@/core/package-manager-command.js';
+import {
+  createPackageInstallCommand,
+  createPackageRemoveCommand,
+} from '@/core/package-manager-command.js';
 
 export class DependencyInstallationError extends Error {
   constructor(message: string) {
     super(message);
     this.name = 'DependencyInstallationError';
+  }
+}
+
+export class DependencyRemovalError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'DependencyRemovalError';
   }
 }
 
@@ -62,5 +73,41 @@ export async function installDependencies(
   return {
     command: installCommand,
     installed: [...dependencies],
+  };
+}
+
+export async function removeDependencies(
+  project: ProjectDetection,
+  dependencies: readonly string[],
+  options: DependencyInstallOptions = {},
+): Promise<DependencyRemovalResult> {
+  if (dependencies.length === 0) {
+    return { removed: [] };
+  }
+
+  if (project.packageManager.name === 'unknown') {
+    throw new DependencyRemovalError(
+      'Could not remove dependencies because the package manager is unknown.',
+    );
+  }
+
+  const removeCommand = createPackageRemoveCommand(project.packageManager.name, dependencies);
+
+  if (removeCommand === undefined) {
+    return { removed: [] };
+  }
+
+  try {
+    await (options.runner ?? runCommand)(removeCommand.command, removeCommand.args, project.root);
+  } catch (error) {
+    if (error instanceof DependencyInstallationError) {
+      throw new DependencyRemovalError(error.message);
+    }
+    throw error;
+  }
+
+  return {
+    command: removeCommand,
+    removed: [...dependencies],
   };
 }

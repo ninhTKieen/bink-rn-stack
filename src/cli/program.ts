@@ -2,6 +2,7 @@ import { Command } from 'commander';
 
 import { registerInitCommand } from '@/cli/commands/init.js';
 import { registerDoctorCommand } from '@/cli/commands/doctor.js';
+import { registerLifecycleCommands } from '@/cli/commands/lifecycle.js';
 import { CLI_VERSION } from '@/configs/constants.js';
 
 export function createProgram(): Command {
@@ -15,6 +16,7 @@ export function createProgram(): Command {
 
   registerInitCommand(program);
   registerDoctorCommand(program);
+  registerLifecycleCommands(program);
 
   return program;
 }

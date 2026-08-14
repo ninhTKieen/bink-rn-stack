@@ -14,3 +14,8 @@ export interface DependencyInstallResult {
   command?: PackageManagerCommand;
   installed: string[];
 }
+
+export interface DependencyRemovalResult {
+  command?: PackageManagerCommand;
+  removed: string[];
+}
